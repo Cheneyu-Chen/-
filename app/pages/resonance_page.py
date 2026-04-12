@@ -60,7 +60,7 @@ class ResonancePage(QWidget):
         form.addRow("结束频率 / Hz", self.end_freq)
         form.addRow("固有频率 / Hz", self.natural_freq)
         form.addRow("阻尼系数", self.damping)
-        form.addRow("扫描点数", int(self.points.value()))
+        form.addRow("扫描点数", self.points)
         control_layout.addLayout(form)
 
         buttons = QHBoxLayout()
