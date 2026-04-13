@@ -40,7 +40,7 @@ class CasesPage(QWidget):
         overview, overview_layout = make_card("教学案例概览")
         overview_layout.addWidget(muted_label(
             "下方预置了 4 个常用教学案例，每个案例都配有操作建议和观察要点。"
-            "点击列表项可查看详细信息。建议在正式答辩前用这些案例预演一遍。"
+            "点击列表项可查看详细信息。"
         ))
         layout.addWidget(overview)
 

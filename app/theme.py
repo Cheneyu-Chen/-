@@ -70,9 +70,41 @@ def build_stylesheet() -> str:
     QComboBox, QDoubleSpinBox, QSpinBox {
         background-color: #0f172a;
         border: 1px solid #334155;
-        border-radius: 10px;
-        padding: 8px 10px;
-        min-height: 18px;
+        border-radius: 6px;
+        padding: 6px 10px;
+        min-height: 28px;
+    }
+    QDoubleSpinBox::up-button, QSpinBox::up-button {
+        subcontrol-origin: border;
+        subcontrol-position: top right;
+        width: 32px;
+        border-left: 1px solid #334155;
+        border-top-right-radius: 6px;
+        background: #1e293b;
+    }
+    QDoubleSpinBox::up-button:hover, QSpinBox::up-button:hover {
+        background: #334155;
+    }
+    QDoubleSpinBox::down-button, QSpinBox::down-button {
+        subcontrol-origin: border;
+        subcontrol-position: bottom right;
+        width: 32px;
+        border-left: 1px solid #334155;
+        border-bottom-right-radius: 6px;
+        background: #1e293b;
+    }
+    QDoubleSpinBox::down-button:hover, QSpinBox::down-button:hover {
+        background: #334155;
+    }
+    QDoubleSpinBox::up-arrow, QSpinBox::up-arrow {
+        image: url(app/up_arrow.svg);
+        width: 14px;
+        height: 14px;
+    }
+    QDoubleSpinBox::down-arrow, QSpinBox::down-arrow {
+        image: url(app/down_arrow.svg);
+        width: 14px;
+        height: 14px;
     }
     QListWidget {
         padding: 8px;

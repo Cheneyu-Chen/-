@@ -10,8 +10,6 @@ from app.main_window import MainWindow
 
 def main() -> int:
     app = QApplication(sys.argv)
-    app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
-    app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
 
     window = MainWindow()
     window.show()

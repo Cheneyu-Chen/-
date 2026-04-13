@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFileDialog,
@@ -99,9 +100,17 @@ class ResonancePage(QWidget):
         right_container.setLayout(right)
         root.addWidget(right_container, 1)
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_animation)
+        self.anim_index = 0
+        self.freq_data = np.array([])
+        self.resp_data = np.array([])
+        self.peaks_indices = []
+
         self.run_scan()
 
     def run_scan(self) -> None:
+        self.timer.stop()
         freqs, response, peaks = scan_resonance(
             start_freq=self.start_freq.value(),
             end_freq=self.end_freq.value(),
@@ -112,19 +121,24 @@ class ResonancePage(QWidget):
 
         fig = self.canvas.figure
         fig.clear()
-        ax = fig.add_subplot(111)
-        ax.plot(freqs, response, color="#60a5fa", linewidth=2.0)
-        ax.scatter(freqs[peaks], response[peaks], color="#ef4444", s=80, zorder=5, label="共振峰")
-        ax.axvline(self.natural_freq.value(), color="#334155", linestyle="--", linewidth=1.5, label="固有频率")
-        ax.set_title("系统频率响应与共振峰", color="#e5e7eb")
-        ax.set_xlabel("驱动频率 / Hz", color="#cbd5e1")
-        ax.set_ylabel("响应强度", color="#cbd5e1")
-        ax.grid(True, alpha=0.15)
-        ax.set_facecolor("#0f172a")
-        for spine in ax.spines.values():
+        self.ax = fig.add_subplot(111)
+        self.line, = self.ax.plot([], [], color="#60a5fa", linewidth=2.0)
+        self.peak_scatter = self.ax.scatter([], [], color="#ef4444", s=80, zorder=5, label="共振峰")
+        self.ax.axvline(self.natural_freq.value(), color="#334155", linestyle="--", linewidth=1.5, label="固有频率")
+        
+        self.ax.set_xlim(self.start_freq.value(), self.end_freq.value())
+        max_resp = np.max(response) if len(response) > 0 else 1.0
+        self.ax.set_ylim(0, max_resp * 1.05 if max_resp > 0 else 1.0)
+        
+        self.ax.set_title("系统频率响应与共振峰", color="#e5e7eb")
+        self.ax.set_xlabel("驱动频率 / Hz", color="#cbd5e1")
+        self.ax.set_ylabel("响应强度", color="#cbd5e1")
+        self.ax.grid(True, alpha=0.15)
+        self.ax.set_facecolor("#0f172a")
+        for spine in self.ax.spines.values():
             spine.set_color("#475569")
-        ax.tick_params(colors="#cbd5e1")
-        leg = ax.legend(facecolor="#111827", edgecolor="#334155")
+        self.ax.tick_params(colors="#cbd5e1")
+        leg = self.ax.legend(loc="upper right", facecolor="#111827", edgecolor="#334155")
         for text in leg.get_texts():
             text.set_color("#e5e7eb")
         fig.patch.set_facecolor("#111827")
@@ -144,6 +158,32 @@ class ResonancePage(QWidget):
         )
         self.last_freqs = freqs
         self.last_response = response
+        
+        self.anim_index = 0
+        self.freq_data = freqs
+        self.resp_data = response
+        self.peaks_indices = peaks
+        total_points = len(freqs)
+        self.points_per_frame = max(1, total_points // 60)
+        self.timer.start(16)
+
+    def update_animation(self) -> None:
+        self.anim_index += self.points_per_frame
+        if self.anim_index >= len(self.freq_data):
+            self.anim_index = len(self.freq_data)
+            self.timer.stop()
+            
+        current_freqs = self.freq_data[:self.anim_index]
+        current_resp = self.resp_data[:self.anim_index]
+        self.line.set_data(current_freqs, current_resp)
+        
+        current_peaks = [p for p in self.peaks_indices if p < self.anim_index]
+        if current_peaks:
+            self.peak_scatter.set_offsets(np.column_stack((self.freq_data[current_peaks], self.resp_data[current_peaks])))
+        else:
+            self.peak_scatter.set_offsets(np.empty((0, 2)))
+            
+        self.canvas.draw_idle()
 
     def export_data(self) -> None:
         if not hasattr(self, "last_freqs"):

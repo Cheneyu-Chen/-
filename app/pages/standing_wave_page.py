@@ -44,6 +44,10 @@ class StandingWavePage(QWidget):
         self.mode_box.addItems(["1 阶", "2 阶", "3 阶", "4 阶"])
         self.mode_box.currentIndexChanged.connect(self.refresh_plot)
 
+        self.boundary_box = QComboBox()
+        self.boundary_box.addItems(["固定-固定", "固定-自由", "自由-自由"])
+        self.boundary_box.currentIndexChanged.connect(self.refresh_plot)
+
         self.freq_spin = QDoubleSpinBox()
         self.freq_spin.setRange(0.2, 6.0)
         self.freq_spin.setSingleStep(0.1)
@@ -68,6 +72,7 @@ class StandingWavePage(QWidget):
         self.excitation_spin.setValue(0.50)
         self.excitation_spin.valueChanged.connect(self.refresh_plot)
 
+        form.addRow("边界条件", self.boundary_box)
         form.addRow("模态阶数", self.mode_box)
         form.addRow("激励频率 / Hz", self.freq_spin)
         form.addRow("初始振幅", self.amp_spin)
@@ -136,6 +141,10 @@ class StandingWavePage(QWidget):
 
     def current_mode(self) -> int:
         return self.mode_box.currentIndex() + 1
+        
+    def current_boundary(self) -> str:
+        mapping = {0: "fixed-fixed", 1: "fixed-free", 2: "free-free"}
+        return mapping[self.boundary_box.currentIndex()]
 
     def refresh_plot(self) -> None:
         y, envelope, info = self.model.simulate(
@@ -146,6 +155,7 @@ class StandingWavePage(QWidget):
             self.damping_spin.value(),
             self.amp_spin.value(),
             self.excitation_spin.value(),
+            self.current_boundary()
         )
         fig = self.canvas.figure
         fig.clear()
@@ -164,14 +174,14 @@ class StandingWavePage(QWidget):
         for spine in ax.spines.values():
             spine.set_color("#475569")
         ax.tick_params(colors="#cbd5e1")
-        leg = ax.legend(facecolor="#111827", edgecolor="#334155")
+        leg = ax.legend(loc="upper right", facecolor="#111827", edgecolor="#334155")
         for text in leg.get_texts():
             text.set_color("#e5e7eb")
         fig.patch.set_facecolor("#111827")
         self.canvas.draw_idle()
 
         self.info_label.setText(
-            f"当前选择 {self.current_mode()} 阶驻波。激励频率为 {self.freq_spin.value():.2f} Hz，"
+            f"当前选择 {self.boundary_box.currentText()}， {self.current_mode()} 阶驻波。激励频率为 {self.freq_spin.value():.2f} Hz，"
             f"与该模态固有频率 {info['natural_frequency']:.2f} Hz 的接近程度决定了响应强弱。"
             f"激励位置耦合系数为 {info['coupling']:.2f}，说明激励点越接近腹点，越容易激发明显响应。"
         )
@@ -192,6 +202,7 @@ class StandingWavePage(QWidget):
 
     def reset_defaults(self) -> None:
         self.mode_box.setCurrentIndex(0)
+        self.boundary_box.setCurrentIndex(0)
         self.freq_spin.setValue(1.0)
         self.amp_spin.setValue(0.6)
         self.damping_spin.setValue(0.12)
