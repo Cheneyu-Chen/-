@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from app.widgets.common import make_card, muted_label
 
@@ -12,35 +12,35 @@ class ComparePage(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
-        purpose_card, purpose_layout = make_card("实验对照的目的")
+        purpose_card, purpose_layout = make_card("实验对比目标")
         purpose_layout.addWidget(muted_label(
-            "本页面为实验对照功能的占位区。在条件允许的情况下，可通过实际实验获取振动板上的颗粒分布图样，"
-            "并与仿真计算得到的节点线进行对比，增强作品的可信度。"
+            "平台不仅输出仿真图，还应能和真实实验或理论图进行对照。建议在竞赛报告中放置三列："
+            "真实克拉尼照片、仿真热图、理论节点线，并说明一致性与误差来源。"
         ))
         layout.addWidget(purpose_card)
 
-        method_card, method_layout = make_card("实验方法建议")
+        method_card, method_layout = make_card("对比流程")
         method_layout.addWidget(muted_label(
-            "• 使用扬声器激励矩形振动板，在板上撒细砂或盐粒。\n"
-            "• 驱动频率逐渐扫过系统的固有频率，观察颗粒聚集位置。\n"
-            "• 将实验照片中的颗粒聚集路径与二维模态页的节点线进行对比。\n"
-            "• 若实验条件受限，可采用简化装置（如一维弦线）进行对比。"
+            "1. 采集实验图：在薄板上撒细沙，用扬声器或振子扫频，记录稳定图案。\n"
+            "2. 建立仿真条件：选择相近几何形状、边界条件和模态阶数，生成振幅热图。\n"
+            "3. 提取节点线：用零等值线表示理论节点线，与沙粒聚集位置比较。\n"
+            "4. 解释误差：讨论夹持不理想、板厚不均、激励点偏移、阻尼和材料参数误差。"
         ))
         layout.addWidget(method_card)
 
-        usage_card, usage_layout = make_card("对照结果解读")
+        usage_card, usage_layout = make_card("可写入报告的指标")
         usage_layout.addWidget(muted_label(
-            "• 若实验中的颗粒聚集路径与仿真节点线位置基本一致，说明模型假设在当前场景下是合理的。\n"
-            "• 若存在明显差异，可分析其来源：例如理想化边界、材料非均匀性、测量误差等。\n"
-            "• 将对照结果写入设计报告和 PPT，可显著提升作品完整性与可信度。"
+            "频率误差：|fₑₓₚ - fₛᵢₘ| / fₑₓₚ。\n"
+            "图案相似度：节点线数量、交点位置、对称性是否一致。\n"
+            "参数敏感性：改变阻尼、边界或激励位置后，峰值和节点线如何变化。\n"
+            "教学价值：学生能否从图像反推出模态阶数、边界条件和共振机制。"
         ))
         layout.addWidget(usage_card)
 
-        note_card, note_layout = make_card("后续扩展方向")
-        note_layout.addWidget(muted_label(
-            "• 本版本为参赛首版，实验对照部分以占位形式呈现。\n"
-            "• 若有实验条件，可在该页面嵌入实验照片与仿真结果并排显示。\n"
-            "• 甚至可扩展到数据导入功能，支持用户上传自己的实验图样进行对比分析。"
+        report_card, report_layout = make_card("文档规范提示")
+        report_layout.addWidget(muted_label(
+            "建议按“选题背景、产品定位、开发环境、平台架构、物理原理、仿真模型、程序功能、实验案例、"
+            "课程联系、讨论总结、分工、参考文献”的顺序整理。每个仿真现象都配一条公式、一张图和一段物理解释。"
         ))
-        layout.addWidget(note_card)
+        layout.addWidget(report_card)
         layout.addStretch(1)

@@ -15,7 +15,10 @@ class HomePage(QWidget):
         hero, hero_layout = make_card()
         title = QLabel("声场与振动可视化虚拟仿真平台")
         title.setObjectName("TitleLabel")
-        subtitle = QLabel("面向大学物理实验教学场景，支持一维驻波、二维模态、共振扫描与案例化演示。")
+        subtitle = QLabel(
+            "面向大学物理与工程振动教学，平台把一维驻波、二维薄板/膜本征振动、"
+            "克拉尼图形、共振峰扫描和真实应用案例组织成可调参数、可看图像、可解释公式的仿真实验。"
+        )
         subtitle.setObjectName("SubtitleLabel")
         subtitle.setWordWrap(True)
         hero_layout.addWidget(title)
@@ -27,30 +30,30 @@ class HomePage(QWidget):
         metrics_layout.setContentsMargins(0, 0, 0, 0)
         metrics_layout.setSpacing(12)
         metrics_layout.addWidget(two_col_row(
-            make_metric("教学导向", "交互式", "强调参数变化与物理规律之间的联系"),
-            make_metric("数值核心", "自主实现", "驻波响应、模态场分布与共振峰识别均为本地计算"),
+            make_metric("基础层", "一维驻波", "fₙ = n v / 2L，观察波节、波腹、边界条件和激励位置。"),
+            make_metric("进阶层", "二维模态", "矩形、圆形与三角形膜的振型热图、节点线和相对本征频率。"),
         ))
         metrics_layout.addWidget(two_col_row(
-            make_metric("比赛展示", "中文友好", "适配 1920×1080 演示和录屏，界面信息层次清晰"),
-            make_metric("扩展空间", "可继续迭代", "后续可加入实验对照、更多边界条件和数据导出"),
+            make_metric("经典层", "克拉尼图形", "用节点线解释沙粒聚集图案，建立频率和模态阶数的对应。"),
+            make_metric("应用层", "乐器 / MEMS", "连接共鸣箱音色、谐振传感器灵敏度与抗震声学超材料。"),
         ))
         layout.addWidget(metrics)
 
-        overview, overview_layout = make_card("建议演示顺序")
-        overview_layout.addWidget(muted_label(
-            "1. 先在“一维驻波”页调节频率与阻尼，展示接近固有频率时振幅放大。\n"
-            "2. 再切换到“二维模态”页，展示矩形板与圆膜的典型振型、节点线与热图。\n"
-            "3. 进入“共振扫描”页，扫描频率范围并观察共振峰位置。\n"
-            "4. 最后用“教学案例”和“实验对照”页收束，强调教学价值与可扩展性。"
+        roadmap, roadmap_layout = make_card("内容结构")
+        roadmap_layout.addWidget(muted_label(
+            "1. 一维驻波：改变边界、频率、阻尼和激励位置，验证波节与本征频率关系。\n"
+            "2. 二维薄板/膜：选择几何形状和模态阶数，显示振幅热图、节点线与相对频率。\n"
+            "3. 共振扫描：自动绘制响应曲线，寻找共振峰，直观看到阻尼对峰值和带宽的影响。\n"
+            "4. 应用案例：从克拉尼图形延伸到乐器共鸣箱、MEMS 谐振器和声学超材料。\n"
+            "5. 实验对比：给出实验照片、仿真图和理论节点线的对比方法，便于写入竞赛报告。"
         ))
-        layout.addWidget(overview)
+        layout.addWidget(roadmap)
 
-        features, features_layout = make_card("软件亮点")
-        features_layout.addWidget(muted_label(
-            "• 中文界面，适合比赛答辩和课堂演示\n"
-            "• 多模块联动，强调从现象到规律的理解\n"
-            "• 深色风格 + 热图可视化，适合录屏与 PPT 截图\n"
-            "• 支持图像导出与案例预置，便于沉淀参赛材料"
+        report, report_layout = make_card("竞赛报告建议目录")
+        report_layout.addWidget(muted_label(
+            "选题背景 -> 产品定位 -> 开发环境与工具链 -> 平台架构 -> 物理原理 -> "
+            "数值模型与边界条件 -> 功能界面说明 -> 实验案例展示 -> 与大学物理课程联系 -> "
+            "讨论总结、分工与参考文献。"
         ))
-        layout.addWidget(features)
+        layout.addWidget(report)
         layout.addStretch(1)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +18,11 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.standing_wave import StandingWaveModel
+from app.theme import (
+    CHART_BG, CHART_FG, CHART_FG_MUTED, CHART_GRID, CHART_LEGEND_EC,
+    CHART_LEGEND_FC, CHART_LINE_AMBER, CHART_LINE_GREEN, CHART_LINE_PRIMARY,
+    CHART_NODE_LINE, CHART_SPINE, CHART_TICK,
+)
 from app.widgets.common import make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
 
@@ -36,7 +40,7 @@ class StandingWavePage(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
-        control_card, control_layout = make_card("参数控制")
+        control_card, control_layout = make_card("一维驻波参数")
         form = QFormLayout()
         form.setSpacing(10)
 
@@ -73,17 +77,17 @@ class StandingWavePage(QWidget):
         self.excitation_spin.valueChanged.connect(self.refresh_plot)
 
         form.addRow("边界条件", self.boundary_box)
-        form.addRow("模态阶数", self.mode_box)
-        form.addRow("激励频率 / Hz", self.freq_spin)
-        form.addRow("初始振幅", self.amp_spin)
-        form.addRow("阻尼系数", self.damping_spin)
-        form.addRow("激励位置", self.excitation_spin)
+        form.addRow("模态阶数 n", self.mode_box)
+        form.addRow("驱动频率 / Hz", self.freq_spin)
+        form.addRow("驱动振幅", self.amp_spin)
+        form.addRow("阻尼比", self.damping_spin)
+        form.addRow("激励位置 x/L", self.excitation_spin)
         control_layout.addLayout(form)
 
         buttons = QHBoxLayout()
         play_btn = QPushButton("播放")
         pause_btn = QPushButton("暂停")
-        reset_btn = QPushButton("恢复默认")
+        reset_btn = QPushButton("重置")
         export_btn = QPushButton("导出图像")
         play_btn.clicked.connect(self.start_animation)
         pause_btn.clicked.connect(self.stop_animation)
@@ -95,11 +99,11 @@ class StandingWavePage(QWidget):
         control_layout.addWidget(reset_btn)
         control_layout.addWidget(export_btn)
 
-        tips_card, tips_layout = make_card("教学提示")
+        tips_card, tips_layout = make_card("理论对应")
         tips_layout.addWidget(muted_label(
-            "• 当激励频率接近当前模态的固有频率时，响应增大。\n"
-            "• 激励点若接近节点位置，耦合效率会明显下降。\n"
-            "• 阻尼增大后，共振峰变缓，动态响应衰减更快。"
+            "固定-固定弦满足 y(0)=y(L)=0，本征频率为 fₙ = n v / 2L。"
+            "固定-自由边界只允许四分之一波长序列，频率近似为 fₙ = (n-1/2)v / 2L。"
+            "激励点位于节点附近时耦合系数接近 0，即使频率接近共振也难以激发该模态。"
         ))
         control_layout.addWidget(tips_card)
         control_layout.addStretch(1)
@@ -107,12 +111,12 @@ class StandingWavePage(QWidget):
 
         right = QVBoxLayout()
         right.setSpacing(12)
-        plot_card, plot_layout = make_card("驻波动态显示")
+        plot_card, plot_layout = make_card("驻波形态与节点")
         self.canvas = MplCanvas(width=7.6, height=4.2, dpi=100)
         plot_layout.addWidget(self.canvas)
         right.addWidget(plot_card, 4)
 
-        info_card, info_layout = make_card("结果解读")
+        info_card, info_layout = make_card("仿真解释")
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
         info_layout.addWidget(self.info_label)
@@ -122,9 +126,9 @@ class StandingWavePage(QWidget):
         metrics_layout.setContentsMargins(0, 0, 0, 0)
         metrics_layout.setSpacing(10)
         self.metric_labels: dict[str, QLabel] = {}
-        for idx, key in enumerate(["固有频率", "响应增益", "耦合系数", "节点数量"]):
+        for idx, key in enumerate(["本征频率", "响应放大", "激励耦合", "节点数量"]):
             label = QLabel("--")
-            label.setStyleSheet("font-size:20px;font-weight:700;color:#f8fafc;")
+            label.setObjectName("MetricValue")
             label.setWordWrap(True)
             box, box_layout = make_card(key)
             box_layout.addWidget(label)
@@ -136,12 +140,11 @@ class StandingWavePage(QWidget):
         right_container = QWidget()
         right_container.setLayout(right)
         root.addWidget(right_container, 1)
-
         self.refresh_plot()
 
     def current_mode(self) -> int:
         return self.mode_box.currentIndex() + 1
-        
+
     def current_boundary(self) -> str:
         mapping = {0: "fixed-fixed", 1: "fixed-free", 2: "free-free"}
         return mapping[self.boundary_box.currentIndex()]
@@ -155,39 +158,41 @@ class StandingWavePage(QWidget):
             self.damping_spin.value(),
             self.amp_spin.value(),
             self.excitation_spin.value(),
-            self.current_boundary()
+            self.current_boundary(),
         )
         fig = self.canvas.figure
         fig.clear()
         ax = fig.add_subplot(111)
-        ax.plot(self.x, y, color="#60a5fa", linewidth=2.0, label="实时位移")
-        ax.plot(self.x, envelope, color="#f59e0b", linestyle="--", linewidth=1.6, label="包络线")
-        ax.plot(self.x, -envelope, color="#f59e0b", linestyle="--", linewidth=1.6)
+        ax.plot(self.x, y, color=CHART_LINE_PRIMARY, linewidth=2.0, label="瞬时位移")
+        ax.plot(self.x, envelope, color=CHART_LINE_AMBER, linestyle="--", linewidth=1.6, label="振幅包络")
+        ax.plot(self.x, -envelope, color=CHART_LINE_AMBER, linestyle="--", linewidth=1.6)
         for pos in info["node_positions"]:
-            ax.axvline(pos, color="#334155", linestyle=":", linewidth=1)
-        ax.scatter([self.excitation_spin.value()], [0], color="#22c55e", s=70, zorder=5, label="激励点")
-        ax.set_title("一维驻波时域快照", color="#e5e7eb", fontsize=13)
-        ax.set_xlabel("归一化位置 x/L", color="#cbd5e1")
-        ax.set_ylabel("位移", color="#cbd5e1")
-        ax.grid(True, alpha=0.18)
-        ax.set_facecolor("#0f172a")
+            ax.axvline(pos, color=CHART_NODE_LINE, linestyle=":", linewidth=1)
+        ax.scatter([self.excitation_spin.value()], [0], color=CHART_LINE_GREEN, s=70, zorder=5, label="激励点")
+        ax.set_title("一维驻波：频率、边界条件与节点分布", color=CHART_FG, fontsize=13)
+        ax.set_xlabel("归一化位置 x/L", color=CHART_FG_MUTED)
+        ax.set_ylabel("位移幅值", color=CHART_FG_MUTED)
+        ax.grid(True, alpha=0.6, color=CHART_GRID, linewidth=0.8)
+        ax.set_facecolor(CHART_BG)
         for spine in ax.spines.values():
-            spine.set_color("#475569")
-        ax.tick_params(colors="#cbd5e1")
-        leg = ax.legend(loc="upper right", facecolor="#111827", edgecolor="#334155")
+            spine.set_color(CHART_SPINE)
+        ax.tick_params(colors=CHART_TICK)
+        leg = ax.legend(loc="upper right", facecolor=CHART_LEGEND_FC, edgecolor=CHART_LEGEND_EC)
         for text in leg.get_texts():
-            text.set_color("#e5e7eb")
-        fig.patch.set_facecolor("#111827")
+            text.set_color(CHART_FG)
+        fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
 
+        detune = self.freq_spin.value() - info["natural_frequency"]
         self.info_label.setText(
-            f"当前选择 {self.boundary_box.currentText()}， {self.current_mode()} 阶驻波。激励频率为 {self.freq_spin.value():.2f} Hz，"
-            f"与该模态固有频率 {info['natural_frequency']:.2f} Hz 的接近程度决定了响应强弱。"
-            f"激励位置耦合系数为 {info['coupling']:.2f}，说明激励点越接近腹点，越容易激发明显响应。"
+            f"当前为 {self.boundary_box.currentText()} 边界、{self.current_mode()} 阶模态。"
+            f"驱动频率 {self.freq_spin.value():.2f} Hz，本征频率 {info['natural_frequency']:.2f} Hz，"
+            f"失谐量 {detune:+.2f} Hz。激励耦合系数为 {info['coupling']:.2f}。"
+            "这说明同一频率下，激励位置不同会导致不同的振幅响应。"
         )
-        self.metric_labels["固有频率"].setText(f"{info['natural_frequency']:.2f} Hz")
-        self.metric_labels["响应增益"].setText(f"{info['gain']:.2f}")
-        self.metric_labels["耦合系数"].setText(f"{info['coupling']:.2f}")
+        self.metric_labels["本征频率"].setText(f"{info['natural_frequency']:.2f} Hz")
+        self.metric_labels["响应放大"].setText(f"{info['gain']:.2f}")
+        self.metric_labels["激励耦合"].setText(f"{info['coupling']:.2f}")
         self.metric_labels["节点数量"].setText(str(len(info["node_positions"])))
 
     def on_tick(self) -> None:
@@ -210,9 +215,24 @@ class StandingWavePage(QWidget):
         self.time_value = 0.0
         self.refresh_plot()
 
+    def apply_preset(self, preset: dict) -> None:
+        boundary_index = {
+            "fixed-fixed": 0,
+            "fixed-free": 1,
+            "free-free": 2,
+        }.get(preset.get("boundary", "fixed-fixed"), 0)
+        self.boundary_box.setCurrentIndex(boundary_index)
+        self.mode_box.setCurrentIndex(max(1, int(preset.get("mode", 1))) - 1)
+        self.freq_spin.setValue(float(preset.get("frequency", self.freq_spin.value())))
+        self.amp_spin.setValue(float(preset.get("amplitude", self.amp_spin.value())))
+        self.damping_spin.setValue(float(preset.get("damping", self.damping_spin.value())))
+        self.excitation_spin.setValue(float(preset.get("excitation", self.excitation_spin.value())))
+        self.time_value = 0.0
+        self.refresh_plot()
+
     def export_figure(self) -> None:
         outputs = Path.cwd() / "outputs"
         outputs.mkdir(exist_ok=True)
-        path, _ = QFileDialog.getSaveFileName(self, "导出图像", str(outputs / "standing_wave.png"), "PNG 图片 (*.png)")
+        path, _ = QFileDialog.getSaveFileName(self, "导出驻波图像", str(outputs / "standing_wave.png"), "PNG 图像 (*.png)")
         if path:
             self.canvas.figure.savefig(path, dpi=180, facecolor=self.canvas.figure.get_facecolor(), bbox_inches="tight")
