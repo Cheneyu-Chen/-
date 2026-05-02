@@ -18,6 +18,7 @@ from app.pages.design_page import DesignPage
 from app.pages.home_page import HomePage
 from app.pages.modes_page import ModesPage
 from app.pages.resonance_page import ResonancePage
+from app.pages.sound3d_page import Sound3DPage
 from app.pages.standing_wave_page import StandingWavePage
 from app.theme import APP_TITLE, build_stylesheet
 
@@ -77,8 +78,9 @@ class MainWindow(QMainWindow):
             ("二维模态", 3),
             ("共振扫描", 4),
             ("进阶声学", 5),
-            ("教学案例", 6),
-            ("实验对比", 7),
+            ("三维声波", 6),
+            ("教学案例", 7),
+            ("实验对比", 8),
         ]
         for name, index in nav_items:
             btn = QLabel(name)
@@ -91,7 +93,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("v1.4 进阶声学版")
+        footer = QLabel("v1.5 动态三维版")
         footer.setObjectName("FooterLabel")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
@@ -104,17 +106,22 @@ class MainWindow(QMainWindow):
         self.modes_page = ModesPage()
         self.resonance_page = ResonancePage()
         self.advanced_page = AdvancedAcousticsPage()
+        self.sound3d_page = Sound3DPage()
         self.cases_page = CasesPage()
         self.compare_page = ComparePage()
 
-        self.stack.addWidget(self.home_page)
-        self.stack.addWidget(self.design_page)
-        self.stack.addWidget(self.standing_wave_page)
-        self.stack.addWidget(self.modes_page)
-        self.stack.addWidget(self.resonance_page)
-        self.stack.addWidget(self.advanced_page)
-        self.stack.addWidget(self.cases_page)
-        self.stack.addWidget(self.compare_page)
+        for page in [
+            self.home_page,
+            self.design_page,
+            self.standing_wave_page,
+            self.modes_page,
+            self.resonance_page,
+            self.advanced_page,
+            self.sound3d_page,
+            self.cases_page,
+            self.compare_page,
+        ]:
+            self.stack.addWidget(page)
 
         self.cases_page.case_requested.connect(self.apply_case_preset)
 
@@ -150,3 +157,7 @@ class MainWindow(QMainWindow):
             self.advanced_page.apply_preset(preset)
             self.stack.setCurrentIndex(5)
             self._set_active_nav(5)
+        elif target == "sound3d":
+            self.sound3d_page.apply_preset(preset)
+            self.stack.setCurrentIndex(6)
+            self._set_active_nav(6)

@@ -63,6 +63,20 @@ CASES = [
         "actions": "一键设置：亥姆霍兹共鸣吸声，共鸣频率 420 Hz，阻尼 0.08。",
         "preset": {"page": "advanced", "experiment": "亥姆霍兹共鸣吸声", "frequency": 420.0, "param_a": 0.08, "param_b": 0.0},
     },
+    {
+        "name": "案例 9：三维点声源球面波",
+        "target": "三维声波",
+        "desc": "动态实验：观察声压波峰从点声源向外传播，理解三维声波的球面扩散和波长概念。",
+        "actions": "一键设置：点声源球面波，频率 420 Hz。",
+        "preset": {"page": "sound3d", "mode": "点声源球面波", "frequency": 420.0, "param_a": 0.8, "param_b": 0.0},
+    },
+    {
+        "name": "案例 10：三维双声源干涉",
+        "target": "三维声波",
+        "desc": "动态实验：两个声源同时发声，三维声压曲面展示相长和相消干涉区域随时间变化。",
+        "actions": "一键设置：双声源三维干涉，频率 620 Hz，声源间距 0.65 m，相位差 0.80 rad。",
+        "preset": {"page": "sound3d", "mode": "双声源三维干涉", "frequency": 620.0, "param_a": 0.65, "param_b": 0.8},
+    },
 ]
 
 

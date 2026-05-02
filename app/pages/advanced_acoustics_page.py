@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
@@ -26,6 +27,7 @@ from app.theme import (
     CHART_FG_MUTED,
     CHART_GRID,
     CHART_LINE_AMBER,
+    CHART_LINE_GREEN,
     CHART_LINE_PRIMARY,
     CHART_LINE_RED,
     CHART_SPINE,
@@ -38,6 +40,10 @@ from app.widgets.mpl_canvas import MplCanvas
 class AdvancedAcousticsPage(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        self.time_value = 0.0
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.on_tick)
+
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
@@ -47,12 +53,7 @@ class AdvancedAcousticsPage(QWidget):
         form.setSpacing(10)
 
         self.experiment_box = QComboBox()
-        self.experiment_box.addItems([
-            "双声源干涉",
-            "单缝声衍射",
-            "一维声子晶体带隙",
-            "亥姆霍兹共鸣吸声",
-        ])
+        self.experiment_box.addItems(["双声源干涉", "单缝声衍射", "一维声子晶体带隙", "亥姆霍兹共鸣吸声"])
         self.experiment_box.currentIndexChanged.connect(self.refresh_plot)
 
         self.freq_spin = QDoubleSpinBox()
@@ -68,7 +69,7 @@ class AdvancedAcousticsPage(QWidget):
         self.param_a.valueChanged.connect(self.refresh_plot)
 
         self.param_b = QDoubleSpinBox()
-        self.param_b.setRange(0.01, 20.0)
+        self.param_b.setRange(0.0, 20.0)
         self.param_b.setSingleStep(0.05)
         self.param_b.setValue(0.00)
         self.param_b.valueChanged.connect(self.refresh_plot)
@@ -80,22 +81,28 @@ class AdvancedAcousticsPage(QWidget):
         control_layout.addLayout(form)
 
         button_row = QHBoxLayout()
-        refresh_btn = QPushButton("刷新")
+        play_btn = QPushButton("播放")
+        pause_btn = QPushButton("暂停")
+        reset_btn = QPushButton("复位")
         export_btn = QPushButton("导出图像")
-        refresh_btn.clicked.connect(self.refresh_plot)
+        play_btn.clicked.connect(self.start_animation)
+        pause_btn.clicked.connect(self.stop_animation)
+        reset_btn.clicked.connect(self.reset_animation)
         export_btn.clicked.connect(self.export_figure)
-        button_row.addWidget(refresh_btn)
-        button_row.addWidget(export_btn)
+        button_row.addWidget(play_btn)
+        button_row.addWidget(pause_btn)
         control_layout.addLayout(button_row)
+        control_layout.addWidget(reset_btn)
+        control_layout.addWidget(export_btn)
 
         self.param_hint = QLabel()
         self.param_hint.setWordWrap(True)
         control_layout.addWidget(self.param_hint)
 
-        note_card, note_layout = make_card("高阶物理意义")
+        note_card, note_layout = make_card("动态演示说明")
         note_layout.addWidget(muted_label(
-            "这些实验把声波从“驻波形状”推进到“波传播与结构调控”：干涉和衍射体现波动性，"
-            "声子晶体体现周期结构带隙，亥姆霍兹共鸣器体现局域共振吸声。"
+            "播放后，干涉图会显示相位推进，衍射图会显示扫描位置，带隙和吸声响应会显示运动的频率游标，"
+            "用于把静态公式转化为可观察的实验过程。"
         ))
         control_layout.addWidget(note_card)
         control_layout.addStretch(1)
@@ -103,7 +110,7 @@ class AdvancedAcousticsPage(QWidget):
 
         right = QVBoxLayout()
         right.setSpacing(12)
-        plot_card, plot_layout = make_card("仿真图像")
+        plot_card, plot_layout = make_card("动态仿真图像")
         self.canvas = MplCanvas(width=7.8, height=4.6, dpi=100)
         plot_layout.addWidget(self.canvas)
         right.addWidget(plot_card, 4)
@@ -120,10 +127,9 @@ class AdvancedAcousticsPage(QWidget):
         self.refresh_plot()
 
     def refresh_plot(self) -> None:
-        experiment = self.experiment_box.currentText()
         fig = self.canvas.figure
         fig.clear()
-
+        experiment = self.experiment_box.currentText()
         if experiment == "双声源干涉":
             self._plot_interference(fig)
         elif experiment == "单缝声衍射":
@@ -132,7 +138,6 @@ class AdvancedAcousticsPage(QWidget):
             self._plot_bandgap(fig)
         else:
             self._plot_helmholtz(fig)
-
         fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
 
@@ -145,7 +150,7 @@ class AdvancedAcousticsPage(QWidget):
 
     def _plot_interference(self, fig) -> None:
         spacing = self.param_a.value()
-        phase = self.param_b.value()
+        phase = self.param_b.value() + 2.0 * self.time_value
         xx, yy, intensity = interference_field(self.freq_spin.value(), spacing, phase)
         ax = fig.add_subplot(111)
         im = ax.imshow(intensity, extent=[xx.min(), xx.max(), yy.min(), yy.max()], origin="lower", cmap="viridis")
@@ -154,13 +159,9 @@ class AdvancedAcousticsPage(QWidget):
         ax.set_xlabel("x / m", color=CHART_FG_MUTED)
         ax.set_ylabel("y / m", color=CHART_FG_MUTED)
         self._style_axis(ax)
-        cbar = fig.colorbar(im, ax=ax, shrink=0.86)
-        cbar.set_label("归一化声强", color=CHART_FG_MUTED)
-        self.param_hint.setText("参数 A：声源间距 d / m；参数 B：相位差 Δφ / rad。")
-        self.summary_label.setText(
-            f"当前声源间距 d={spacing:.2f} m，相位差 Δφ={phase:.2f} rad。"
-            "亮纹对应相长干涉，暗纹对应相消干涉，可用于讲解路径差、相位差与声场空间分布。"
-        )
+        fig.colorbar(im, ax=ax, shrink=0.86)
+        self.param_hint.setText("参数 A：声源间距 d / m；参数 B：初始相位差 Δφ / rad。")
+        self.summary_label.setText(f"相位正在推进：等效相位差 Δφ={phase:.2f} rad。亮纹与暗纹会随相位变化发生移动。")
 
     def _plot_diffraction(self, fig) -> None:
         slit_width = self.param_a.value()
@@ -169,15 +170,15 @@ class AdvancedAcousticsPage(QWidget):
         ax = fig.add_subplot(111)
         ax.plot(x, envelope, color=CHART_LINE_PRIMARY, linewidth=2.2)
         ax.fill_between(x, envelope, color=CHART_LINE_PRIMARY, alpha=0.18)
+        scan_x = x[int((self.time_value * 60) % len(x))]
+        ax.axvline(scan_x, color=CHART_LINE_RED, linestyle="--", linewidth=1.8, label="扫描位置")
+        ax.scatter([scan_x], [envelope[int((self.time_value * 60) % len(x))]], color=CHART_LINE_RED, s=55, zorder=5)
         ax.set_title("单缝声衍射强度包络", color=CHART_FG)
         ax.set_xlabel("屏上横向位置 / m", color=CHART_FG_MUTED)
         ax.set_ylabel("归一化强度", color=CHART_FG_MUTED)
         self._style_axis(ax)
         self.param_hint.setText("参数 A：缝宽 a / m；参数 B：屏距 L / m。")
-        self.summary_label.setText(
-            f"当前波长 λ={wavelength:.3f} m，缝宽 a={slit_width:.2f} m，屏距 L={screen_distance:.2f} m。"
-            "当缝宽接近波长时，中央主瓣变宽，体现声波的衍射特性。"
-        )
+        self.summary_label.setText(f"波长 λ={wavelength:.3f} m。红色游标模拟探头沿屏幕扫描衍射强度。")
 
     def _plot_bandgap(self, fig) -> None:
         mass_ratio = self.param_a.value()
@@ -188,6 +189,8 @@ class AdvancedAcousticsPage(QWidget):
         ax.plot(q, optical, color=CHART_LINE_RED, linewidth=2.2, label="光学支")
         if optical.min() > acoustic.max():
             ax.axhspan(acoustic.max(), optical.min(), color=CHART_LINE_AMBER, alpha=0.22, label="带隙")
+        cursor = (self.time_value * 0.35) % 1.0
+        ax.axvline(cursor, color=CHART_LINE_GREEN, linestyle="--", linewidth=1.8, label="波矢扫描")
         ax.set_title("一维双原胞声子晶体色散关系", color=CHART_FG)
         ax.set_xlabel("归一化波矢 q/π", color=CHART_FG_MUTED)
         ax.set_ylabel("归一化角频率", color=CHART_FG_MUTED)
@@ -196,10 +199,7 @@ class AdvancedAcousticsPage(QWidget):
         for text in leg.get_texts():
             text.set_color(CHART_FG)
         self.param_hint.setText("参数 A：质量比 m₂/m₁；参数 B：刚度比 k₂/k₁。")
-        self.summary_label.setText(
-            f"当前质量比 {mass_ratio:.2f}，刚度比 {stiffness_ratio:.2f}，归一化带隙宽度约 {gap:.3f}。"
-            "周期结构会让某些频率不能传播，这是声学超材料和隔振结构的重要物理基础。"
-        )
+        self.summary_label.setText(f"归一化带隙宽度约 {gap:.3f}。绿色游标模拟波矢扫描，带隙区间内没有传播模态。")
 
     def _plot_helmholtz(self, fig) -> None:
         resonant_frequency = self.freq_spin.value()
@@ -208,6 +208,8 @@ class AdvancedAcousticsPage(QWidget):
         ax = fig.add_subplot(111)
         ax.plot(freqs, absorption, color=CHART_LINE_PRIMARY, linewidth=2.2)
         ax.axvline(resonant_frequency, color=CHART_LINE_RED, linestyle="--", linewidth=1.6, label="共鸣频率")
+        cursor = freqs[int((self.time_value * 40) % len(freqs))]
+        ax.axvline(cursor, color=CHART_LINE_GREEN, linestyle=":", linewidth=1.8, label="扫频游标")
         ax.set_title("亥姆霍兹共鸣吸声响应", color=CHART_FG)
         ax.set_xlabel("频率 / Hz", color=CHART_FG_MUTED)
         ax.set_ylabel("吸声系数", color=CHART_FG_MUTED)
@@ -216,11 +218,22 @@ class AdvancedAcousticsPage(QWidget):
         leg = ax.legend(loc="best")
         for text in leg.get_texts():
             text.set_color(CHART_FG)
-        self.param_hint.setText("频率：共鸣频率 f₀ / Hz；参数 A：阻尼系数 ζ；参数 B 在本实验中不使用。")
-        self.summary_label.setText(
-            f"当前共鸣频率 f₀={resonant_frequency:.1f} Hz，阻尼 ζ={damping:.2f}，半吸收带宽约 {bandwidth:.1f} Hz。"
-            "局域共振器能在目标频段显著吸声，是消声器、建筑声学和声学超材料的重要单元。"
-        )
+        self.param_hint.setText("频率：共鸣频率 f₀ / Hz；参数 A：阻尼系数 ζ；参数 B 不使用。")
+        self.summary_label.setText(f"半吸收带宽约 {bandwidth:.1f} Hz。绿色游标模拟扫频实验，接近 f₀ 时吸声最强。")
+
+    def on_tick(self) -> None:
+        self.time_value += 0.04
+        self.refresh_plot()
+
+    def start_animation(self) -> None:
+        self.timer.start(55)
+
+    def stop_animation(self) -> None:
+        self.timer.stop()
+
+    def reset_animation(self) -> None:
+        self.time_value = 0.0
+        self.refresh_plot()
 
     def apply_preset(self, preset: dict) -> None:
         experiment = preset.get("experiment")
@@ -232,6 +245,7 @@ class AdvancedAcousticsPage(QWidget):
         self.freq_spin.setValue(float(preset.get("frequency", self.freq_spin.value())))
         self.param_a.setValue(float(preset.get("param_a", self.param_a.value())))
         self.param_b.setValue(float(preset.get("param_b", self.param_b.value())))
+        self.time_value = 0.0
         self.refresh_plot()
 
     def export_figure(self) -> None:
