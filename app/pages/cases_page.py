@@ -10,86 +10,58 @@ CASES = [
     {
         "name": "案例 1：固定弦的一维驻波",
         "target": "一维驻波",
-        "desc": "演示固定-固定边界下，模态阶数、节点数量和本征频率之间的关系。适合讲解 fₙ = n v / 2L。",
+        "desc": "控制变量：固定边界和材料参数，只改变模态阶数。观察节点数量和本征频率之间的关系，适合讲解 fₙ = n v / 2L。",
         "actions": "一键设置：固定-固定边界，2 阶模态，驱动频率 2.00 Hz，激励点位于 x/L=0.25。",
-        "preset": {
-            "page": "standing_wave",
-            "boundary": "fixed-fixed",
-            "mode": 2,
-            "frequency": 2.0,
-            "amplitude": 0.55,
-            "damping": 0.10,
-            "excitation": 0.25,
-        },
+        "preset": {"page": "standing_wave", "boundary": "fixed-fixed", "mode": 2, "frequency": 2.0, "amplitude": 0.55, "damping": 0.10, "excitation": 0.25},
     },
     {
         "name": "案例 2：激励点在节点附近",
         "target": "一维驻波",
-        "desc": "同样接近共振时，激励点如果落在节点附近，耦合系数会显著变小，振动难以被激发。",
+        "desc": "控制变量：保持频率和边界不变，只改变激励位置。用于说明节点处耦合系数小，接近共振也不一定能激发模态。",
         "actions": "一键设置：固定-固定边界，2 阶模态，驱动频率 2.00 Hz，激励点位于 x/L=0.50。",
-        "preset": {
-            "page": "standing_wave",
-            "boundary": "fixed-fixed",
-            "mode": 2,
-            "frequency": 2.0,
-            "amplitude": 0.75,
-            "damping": 0.08,
-            "excitation": 0.50,
-        },
+        "preset": {"page": "standing_wave", "boundary": "fixed-fixed", "mode": 2, "frequency": 2.0, "amplitude": 0.75, "damping": 0.08, "excitation": 0.50},
     },
     {
         "name": "案例 3：矩形板克拉尼图形",
         "target": "二维模态",
-        "desc": "展示矩形薄板/膜的节点线。零等值线可对应克拉尼实验中沙粒聚集的稳定图案。",
+        "desc": "控制变量：固定矩形几何，只改变模态指标。零等值线对应克拉尼实验中沙粒聚集的稳定图案。",
         "actions": "一键设置：矩形膜，m=3，n=2，应用场景选择“克拉尼图形”。",
-        "preset": {
-            "page": "modes",
-            "geometry": "rectangular",
-            "primary": 3,
-            "secondary": 2,
-            "application": "克拉尼图形",
-        },
+        "preset": {"page": "modes", "geometry": "rectangular", "primary": 3, "secondary": 2, "application": "克拉尼图形"},
     },
     {
         "name": "案例 4：圆形 MEMS 谐振器",
         "target": "二维模态",
-        "desc": "圆盘结构常见于 MEMS 谐振器。角向分瓣和径向节点圈可以用来解释驱动/检测电极布置。",
+        "desc": "应用拓展：圆盘结构常见于 MEMS 谐振器。角向分瓣和径向节点圈可以用来解释驱动/检测电极布置。",
         "actions": "一键设置：圆形膜，角向阶数 2，径向指标 1，应用场景选择“MEMS 谐振器”。",
-        "preset": {
-            "page": "modes",
-            "geometry": "circular",
-            "primary": 3,
-            "secondary": 1,
-            "application": "MEMS 谐振器",
-        },
+        "preset": {"page": "modes", "geometry": "circular", "primary": 3, "secondary": 1, "application": "MEMS 谐振器"},
     },
     {
         "name": "案例 5：低阻尼共振峰扫描",
         "target": "共振扫描",
-        "desc": "演示低阻尼系统的尖锐共振峰。可用于解释 Q 值、峰值响应和半功率带宽。",
+        "desc": "控制变量：固定本征频率，只降低阻尼比。观察尖锐共振峰，用于解释 Q 值、峰值响应和半功率带宽。",
         "actions": "一键设置：扫描 0.5-4.0 Hz，本征频率 2.00 Hz，阻尼比 0.04。",
-        "preset": {
-            "page": "resonance",
-            "start": 0.5,
-            "end": 4.0,
-            "natural": 2.0,
-            "damping": 0.04,
-            "points": 320,
-        },
+        "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.04, "points": 320},
     },
     {
         "name": "案例 6：高阻尼响应对比",
         "target": "共振扫描",
-        "desc": "演示阻尼增大后峰值下降、带宽变宽的现象，适合与低阻尼案例并列展示。",
+        "desc": "对照实验：与低阻尼案例相比，只增大阻尼比。观察峰值下降、带宽变宽，形成清晰的实验讨论材料。",
         "actions": "一键设置：扫描 0.5-4.0 Hz，本征频率 2.00 Hz，阻尼比 0.25。",
-        "preset": {
-            "page": "resonance",
-            "start": 0.5,
-            "end": 4.0,
-            "natural": 2.0,
-            "damping": 0.25,
-            "points": 320,
-        },
+        "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.25, "points": 320},
+    },
+    {
+        "name": "案例 7：声子晶体带隙",
+        "target": "进阶声学",
+        "desc": "高阶实验：周期结构会让特定频率的声波无法传播。通过改变质量比和刚度比，观察声学支、光学支和带隙宽度。",
+        "actions": "一键设置：一维声子晶体带隙，质量比 3.00，刚度比 0.60。",
+        "preset": {"page": "advanced", "experiment": "一维声子晶体带隙", "frequency": 800.0, "param_a": 3.0, "param_b": 0.6},
+    },
+    {
+        "name": "案例 8：亥姆霍兹共鸣吸声",
+        "target": "进阶声学",
+        "desc": "高阶实验：局域共振器会在目标频段强吸声，是消声器、建筑声学和声学超材料的基本单元。",
+        "actions": "一键设置：亥姆霍兹共鸣吸声，共鸣频率 420 Hz，阻尼 0.08。",
+        "preset": {"page": "advanced", "experiment": "亥姆霍兹共鸣吸声", "frequency": 420.0, "param_a": 0.08, "param_b": 0.0},
     },
 ]
 
@@ -105,7 +77,7 @@ class CasesPage(QWidget):
 
         overview, overview_layout = make_card("教学案例一键跳转")
         overview_layout.addWidget(muted_label(
-            "选择一个教学案例后，点击“一键进入案例”，平台会自动跳转到对应仿真页面，并设置好频率、边界、模态、阻尼等参数。"
+            "选择案例后点击“一键进入案例”，平台会跳转到对应仿真页并自动设置参数。新增的进阶案例用于展示声学超材料、带隙与局域共振。"
         ))
         layout.addWidget(overview)
 

@@ -68,7 +68,7 @@ def build_stylesheet() -> str:
         color: #9ca3af;
     }
     QLabel#CodeLabel {
-        font-family: 'Consolas', 'Courier New', monospace;
+        font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'Consolas', monospace;
         font-size: 13px;
         color: #374151;
     }
@@ -139,30 +139,6 @@ def build_stylesheet() -> str:
         selection-color: #115e59;
         outline: none;
         color: #111827;
-    }
-    QDoubleSpinBox::up-button, QSpinBox::up-button {
-        subcontrol-origin: border;
-        subcontrol-position: top right;
-        width: 28px;
-        border-left: 1px solid #d1d5db;
-        background-color: #f9fafb;
-    }
-    QDoubleSpinBox::down-button, QSpinBox::down-button {
-        subcontrol-origin: border;
-        subcontrol-position: bottom right;
-        width: 28px;
-        border-left: 1px solid #d1d5db;
-        background-color: #f9fafb;
-    }
-    QDoubleSpinBox::up-arrow, QSpinBox::up-arrow {
-        image: url(app/up_arrow.svg);
-        width: 12px;
-        height: 12px;
-    }
-    QDoubleSpinBox::down-arrow, QSpinBox::down-arrow {
-        image: url(app/down_arrow.svg);
-        width: 12px;
-        height: 12px;
     }
     QListWidget {
         background-color: #ffffff;

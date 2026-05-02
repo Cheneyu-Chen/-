@@ -11,8 +11,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.pages.advanced_acoustics_page import AdvancedAcousticsPage
 from app.pages.cases_page import CasesPage
 from app.pages.compare_page import ComparePage
+from app.pages.design_page import DesignPage
 from app.pages.home_page import HomePage
 from app.pages.modes_page import ModesPage
 from app.pages.resonance_page import ResonancePage
@@ -70,11 +72,13 @@ class MainWindow(QMainWindow):
         self.nav_buttons: list[tuple[QLabel, int]] = []
         nav_items = [
             ("平台总览", 0),
-            ("一维驻波", 1),
-            ("二维模态", 2),
-            ("共振扫描", 3),
-            ("教学案例", 4),
-            ("实验对比", 5),
+            ("平台设计", 1),
+            ("一维驻波", 2),
+            ("二维模态", 3),
+            ("共振扫描", 4),
+            ("进阶声学", 5),
+            ("教学案例", 6),
+            ("实验对比", 7),
         ]
         for name, index in nav_items:
             btn = QLabel(name)
@@ -87,7 +91,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("v1.2 教学案例版")
+        footer = QLabel("v1.4 进阶声学版")
         footer.setObjectName("FooterLabel")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
@@ -95,16 +99,20 @@ class MainWindow(QMainWindow):
 
     def _init_pages(self) -> None:
         self.home_page = HomePage()
+        self.design_page = DesignPage()
         self.standing_wave_page = StandingWavePage()
         self.modes_page = ModesPage()
         self.resonance_page = ResonancePage()
+        self.advanced_page = AdvancedAcousticsPage()
         self.cases_page = CasesPage()
         self.compare_page = ComparePage()
 
         self.stack.addWidget(self.home_page)
+        self.stack.addWidget(self.design_page)
         self.stack.addWidget(self.standing_wave_page)
         self.stack.addWidget(self.modes_page)
         self.stack.addWidget(self.resonance_page)
+        self.stack.addWidget(self.advanced_page)
         self.stack.addWidget(self.cases_page)
         self.stack.addWidget(self.compare_page)
 
@@ -128,13 +136,17 @@ class MainWindow(QMainWindow):
         target = preset.get("page")
         if target == "standing_wave":
             self.standing_wave_page.apply_preset(preset)
-            self.stack.setCurrentIndex(1)
-            self._set_active_nav(1)
-        elif target == "modes":
-            self.modes_page.apply_preset(preset)
             self.stack.setCurrentIndex(2)
             self._set_active_nav(2)
-        elif target == "resonance":
-            self.resonance_page.apply_preset(preset)
+        elif target == "modes":
+            self.modes_page.apply_preset(preset)
             self.stack.setCurrentIndex(3)
             self._set_active_nav(3)
+        elif target == "resonance":
+            self.resonance_page.apply_preset(preset)
+            self.stack.setCurrentIndex(4)
+            self._set_active_nav(4)
+        elif target == "advanced":
+            self.advanced_page.apply_preset(preset)
+            self.stack.setCurrentIndex(5)
+            self._set_active_nav(5)

@@ -14,7 +14,7 @@ class ComparePage(QWidget):
 
         purpose_card, purpose_layout = make_card("实验对比目标")
         purpose_layout.addWidget(muted_label(
-            "平台不仅输出仿真图，还应能和真实实验或理论图进行对照。建议在竞赛报告中放置三列："
+            "优秀报告强调“仿真结果要与物理图像和课程内容对应”。本平台建议采用三列对照："
             "真实克拉尼照片、仿真热图、理论节点线，并说明一致性与误差来源。"
         ))
         layout.addWidget(purpose_card)
@@ -28,6 +28,15 @@ class ComparePage(QWidget):
         ))
         layout.addWidget(method_card)
 
+        course_card, course_layout = make_card("与大学物理课程的联系")
+        course_layout.addWidget(muted_label(
+            "机械波：驻波、波节、波腹、波速与频率关系。\n"
+            "振动学：受迫振动、共振峰、阻尼比、Q 值和能量耗散。\n"
+            "数学物理方法：本征值问题、边界条件、节点线和模态叠加。\n"
+            "实验方法：控制变量、参数扫描、误差分析和图像对比。"
+        ))
+        layout.addWidget(course_card)
+
         usage_card, usage_layout = make_card("可写入报告的指标")
         usage_layout.addWidget(muted_label(
             "频率误差：|fₑₓₚ - fₛᵢₘ| / fₑₓₚ。\n"
@@ -37,10 +46,11 @@ class ComparePage(QWidget):
         ))
         layout.addWidget(usage_card)
 
-        report_card, report_layout = make_card("文档规范提示")
-        report_layout.addWidget(muted_label(
-            "建议按“选题背景、产品定位、开发环境、平台架构、物理原理、仿真模型、程序功能、实验案例、"
-            "课程联系、讨论总结、分工、参考文献”的顺序整理。每个仿真现象都配一条公式、一张图和一段物理解释。"
+        discussion_card, discussion_layout = make_card("讨论与总结角度")
+        discussion_layout.addWidget(muted_label(
+            "优势：界面交互直观、参数可调、图像实时更新、案例可复现、公式与仿真对应清楚。\n"
+            "局限：当前二维模态以解析/近似模型为主，复杂真实薄板仍需有限元模型进一步校准。\n"
+            "展望：可加入实验照片导入、图像相似度计算、自定义多边形边界和声学超材料带隙模块。"
         ))
-        layout.addWidget(report_card)
+        layout.addWidget(discussion_card)
         layout.addStretch(1)
