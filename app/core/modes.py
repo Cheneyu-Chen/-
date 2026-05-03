@@ -23,3 +23,17 @@ def circular_mode(order: int, radial_index: int, resolution: int = 220):
     zz = np.ma.array(zz, mask=rr > 1.0)
     relative_frequency = float(zero)
     return xx, yy, zz, relative_frequency
+
+
+def triangular_mode(m: int, n: int, resolution: int = 200):
+    axis = np.linspace(0, 1, resolution)
+    xx, yy = np.meshgrid(axis, axis)
+    mask = yy <= (1 - xx)
+    zz = (
+        np.sin(m * np.pi * xx)
+        * np.sin(n * np.pi * yy)
+        * np.sin((m + n) * np.pi * (1 - xx - yy))
+    )
+    zz = np.ma.array(zz, mask=~mask)
+    relative_frequency = np.sqrt(m**2 + n**2 + m * n)
+    return xx, yy, zz, relative_frequency

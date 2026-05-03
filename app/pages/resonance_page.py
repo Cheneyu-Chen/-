@@ -16,6 +16,11 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.resonance import scan_resonance
+from app.theme import (
+    CHART_BG, CHART_FG, CHART_FG_MUTED, CHART_GRID, CHART_LEGEND_EC,
+    CHART_LEGEND_FC, CHART_LINE_PRIMARY, CHART_LINE_RED, CHART_NODE_LINE,
+    CHART_SPINE, CHART_TICK,
+)
 from app.widgets.common import make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
 
@@ -27,7 +32,7 @@ class ResonancePage(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
-        control_card, control_layout = make_card("扫描参数设置")
+        control_card, control_layout = make_card("频率扫描参数")
         form = QFormLayout()
         form.setSpacing(10)
 
@@ -55,17 +60,17 @@ class ResonancePage(QWidget):
         self.points.setDecimals(0)
         self.points.setRange(50, 1000)
         self.points.setSingleStep(50)
-        self.points.setValue(200)
+        self.points.setValue(240)
 
         form.addRow("起始频率 / Hz", self.start_freq)
-        form.addRow("结束频率 / Hz", self.end_freq)
-        form.addRow("固有频率 / Hz", self.natural_freq)
-        form.addRow("阻尼系数", self.damping)
-        form.addRow("扫描点数", self.points)
+        form.addRow("终止频率 / Hz", self.end_freq)
+        form.addRow("本征频率 / Hz", self.natural_freq)
+        form.addRow("阻尼比", self.damping)
+        form.addRow("采样点数", self.points)
         control_layout.addLayout(form)
 
         buttons = QHBoxLayout()
-        scan_btn = QPushButton("开始扫描")
+        scan_btn = QPushButton("扫描频率")
         export_btn = QPushButton("导出数据")
         scan_btn.clicked.connect(self.run_scan)
         export_btn.clicked.connect(self.export_data)
@@ -73,11 +78,10 @@ class ResonancePage(QWidget):
         buttons.addWidget(export_btn)
         control_layout.addLayout(buttons)
 
-        note_card, note_layout = make_card("教学说明")
+        note_card, note_layout = make_card("理论对应")
         note_layout.addWidget(muted_label(
-            "• 共振扫描通过缓慢改变驱动频率，观察系统响应变化。\n"
-            "• 响应峰值出现的位置对应系统的固有频率附近。\n"
-            "• 阻尼增大时，共振峰变宽、峰值降低；阻尼减小时，峰变尖锐。"
+            "受迫振动的幅频响应可写成 |A| = 1 / √[(1-r²)² + (2ζr)²]，其中 r = f / fₙ。"
+            "当驱动频率接近本征频率时响应达到峰值；阻尼越小，峰越高且带宽越窄。"
         ))
         control_layout.addWidget(note_card)
         control_layout.addStretch(1)
@@ -85,12 +89,12 @@ class ResonancePage(QWidget):
 
         right = QVBoxLayout()
         right.setSpacing(12)
-        plot_card, plot_layout = make_card("频率响应曲线")
+        plot_card, plot_layout = make_card("共振峰自动识别")
         self.canvas = MplCanvas(width=7.6, height=4.5, dpi=100)
         plot_layout.addWidget(self.canvas)
         right.addWidget(plot_card, 3)
 
-        summary_card, summary_layout = make_card("结果解读")
+        summary_card, summary_layout = make_card("仿真解释")
         self.summary_label = QLabel()
         self.summary_label.setWordWrap(True)
         summary_layout.addWidget(self.summary_label)
@@ -106,14 +110,15 @@ class ResonancePage(QWidget):
         self.freq_data = np.array([])
         self.resp_data = np.array([])
         self.peaks_indices = []
-
         self.run_scan()
 
     def run_scan(self) -> None:
         self.timer.stop()
+        start = min(self.start_freq.value(), self.end_freq.value() - 0.01)
+        end = max(self.end_freq.value(), start + 0.01)
         freqs, response, peaks = scan_resonance(
-            start_freq=self.start_freq.value(),
-            end_freq=self.end_freq.value(),
+            start_freq=start,
+            end_freq=end,
             points=int(self.points.value()),
             natural_frequency=self.natural_freq.value(),
             damping=self.damping.value(),
@@ -122,49 +127,46 @@ class ResonancePage(QWidget):
         fig = self.canvas.figure
         fig.clear()
         self.ax = fig.add_subplot(111)
-        self.line, = self.ax.plot([], [], color="#60a5fa", linewidth=2.0)
-        self.peak_scatter = self.ax.scatter([], [], color="#ef4444", s=80, zorder=5, label="共振峰")
-        self.ax.axvline(self.natural_freq.value(), color="#334155", linestyle="--", linewidth=1.5, label="固有频率")
-        
-        self.ax.set_xlim(self.start_freq.value(), self.end_freq.value())
+        self.line, = self.ax.plot([], [], color=CHART_LINE_PRIMARY, linewidth=2.0, label="响应曲线")
+        self.peak_scatter = self.ax.scatter([], [], color=CHART_LINE_RED, s=80, zorder=5, label="识别峰值")
+        self.ax.axvline(self.natural_freq.value(), color=CHART_NODE_LINE, linestyle="--", linewidth=1.5, label="本征频率")
+        self.ax.set_xlim(start, end)
         max_resp = np.max(response) if len(response) > 0 else 1.0
-        self.ax.set_ylim(0, max_resp * 1.05 if max_resp > 0 else 1.0)
-        
-        self.ax.set_title("系统频率响应与共振峰", color="#e5e7eb")
-        self.ax.set_xlabel("驱动频率 / Hz", color="#cbd5e1")
-        self.ax.set_ylabel("响应强度", color="#cbd5e1")
-        self.ax.grid(True, alpha=0.15)
-        self.ax.set_facecolor("#0f172a")
+        self.ax.set_ylim(0, max_resp * 1.08 if max_resp > 0 else 1.0)
+        self.ax.set_title("受迫振动幅频响应", color=CHART_FG)
+        self.ax.set_xlabel("驱动频率 / Hz", color=CHART_FG_MUTED)
+        self.ax.set_ylabel("归一化响应幅值", color=CHART_FG_MUTED)
+        self.ax.grid(True, alpha=0.6, color=CHART_GRID, linewidth=0.8)
+        self.ax.set_facecolor(CHART_BG)
         for spine in self.ax.spines.values():
-            spine.set_color("#475569")
-        self.ax.tick_params(colors="#cbd5e1")
-        leg = self.ax.legend(loc="upper right", facecolor="#111827", edgecolor="#334155")
+            spine.set_color(CHART_SPINE)
+        self.ax.tick_params(colors=CHART_TICK)
+        leg = self.ax.legend(loc="upper right", facecolor=CHART_LEGEND_FC, edgecolor=CHART_LEGEND_EC)
         for text in leg.get_texts():
-            text.set_color("#e5e7eb")
-        fig.patch.set_facecolor("#111827")
+            text.set_color(CHART_FG)
+        fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
 
-        peak_info = ""
         if len(peaks) > 0:
             peak_freqs = freqs[peaks]
-            peak_info = f"扫描到 {len(peaks)} 个响应峰值，峰值位置分别为：{', '.join(f'{f:.2f} Hz' for f in peak_freqs)}。"
+            peak_values = response[peaks]
+            peak_info = "；".join(f"{f:.2f} Hz，响应 {a:.2f}" for f, a in zip(peak_freqs, peak_values))
         else:
-            peak_info = "扫描范围内未检测到明显峰值，可尝试调整固有频率或扫描范围。"
-
+            peak_info = "扫描区间内未识别到显著峰值，请扩大频率范围或降低阻尼。"
+        q_factor = 1 / max(2 * self.damping.value(), 1e-6)
         self.summary_label.setText(
-            f"已从 {self.start_freq.value():.2f} Hz 扫描至 {self.end_freq.value():.2f} Hz，"
-            f"系统固有频率设定为 {self.natural_freq.value():.2f} Hz，阻尼系数为 {self.damping.value():.2f}。"
-            f"{peak_info}阻尼系数越小，共振峰越尖锐；增大阻尼会使共振峰变宽且峰值降低。"
+            f"扫描范围 {start:.2f}-{end:.2f} Hz，本征频率 {self.natural_freq.value():.2f} Hz，"
+            f"阻尼比 {self.damping.value():.2f}，估计 Q 值约 {q_factor:.1f}。"
+            f"峰值结果：{peak_info}。这组数据可用于说明共振峰、半功率带宽和阻尼之间的关系。"
         )
         self.last_freqs = freqs
         self.last_response = response
-        
+
         self.anim_index = 0
         self.freq_data = freqs
         self.resp_data = response
         self.peaks_indices = peaks
-        total_points = len(freqs)
-        self.points_per_frame = max(1, total_points // 60)
+        self.points_per_frame = max(1, len(freqs) // 60)
         self.timer.start(16)
 
     def update_animation(self) -> None:
@@ -172,18 +174,25 @@ class ResonancePage(QWidget):
         if self.anim_index >= len(self.freq_data):
             self.anim_index = len(self.freq_data)
             self.timer.stop()
-            
+
         current_freqs = self.freq_data[:self.anim_index]
         current_resp = self.resp_data[:self.anim_index]
         self.line.set_data(current_freqs, current_resp)
-        
+
         current_peaks = [p for p in self.peaks_indices if p < self.anim_index]
         if current_peaks:
             self.peak_scatter.set_offsets(np.column_stack((self.freq_data[current_peaks], self.resp_data[current_peaks])))
         else:
             self.peak_scatter.set_offsets(np.empty((0, 2)))
-            
         self.canvas.draw_idle()
+
+    def apply_preset(self, preset: dict) -> None:
+        self.start_freq.setValue(float(preset.get("start", self.start_freq.value())))
+        self.end_freq.setValue(float(preset.get("end", self.end_freq.value())))
+        self.natural_freq.setValue(float(preset.get("natural", self.natural_freq.value())))
+        self.damping.setValue(float(preset.get("damping", self.damping.value())))
+        self.points.setValue(float(preset.get("points", self.points.value())))
+        self.run_scan()
 
     def export_data(self) -> None:
         if not hasattr(self, "last_freqs"):
@@ -193,4 +202,4 @@ class ResonancePage(QWidget):
         path, _ = QFileDialog.getSaveFileName(self, "导出共振扫描数据", str(outputs / "resonance_scan.txt"), "文本文件 (*.txt)")
         if path:
             data = np.column_stack([self.last_freqs, self.last_response])
-            np.savetxt(path, data, header="频率,响应强度", fmt="%.6f", delimiter=",", encoding="utf-8")
+            np.savetxt(path, data, header="frequency_hz,response", fmt="%.6f", delimiter=",", encoding="utf-8")
