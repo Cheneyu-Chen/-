@@ -24,7 +24,7 @@ from app.widgets.mpl_canvas import MplCanvas
 class Sound3DPage(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.time_value = 0.0
+        self.phase_value = 0.0
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.on_tick)
 
@@ -85,8 +85,8 @@ class Sound3DPage(QWidget):
 
         note_card, note_layout = make_card("动态演示说明")
         note_layout.addWidget(muted_label(
-            "本页用三维曲面显示声压瞬时分布：波峰和波谷会随时间传播，"
-            "比静态声强图更适合展示球面波、干涉和房间模态的动态过程。"
+            "本页固定观察视角，用连续相位推进声压场本身：波峰、波谷和干涉区域会随时间演化，"
+            "而不是把一张已经绘制完成的图像进行旋转。"
         ))
         control_layout.addWidget(note_card)
         control_layout.addStretch(1)
@@ -114,31 +114,34 @@ class Sound3DPage(QWidget):
         fig.clear()
         ax = fig.add_subplot(111, projection="3d")
         mode = self.mode_box.currentText()
+        frequency = self.freq_spin.value()
+        animation_time = self.phase_value / max(frequency, 1.0)
 
         if mode == "点声源球面波":
-            xx, yy, pressure, wavelength = spherical_wave_field(self.freq_spin.value(), self.time_value)
+            xx, yy, pressure, wavelength = spherical_wave_field(frequency, animation_time)
             title = "点声源球面波瞬时声压"
             self.param_hint.setText("参数 A、B 在点声源模式中不使用。")
             self.summary_label.setText(
-                f"当前波长 λ={wavelength:.3f} m。播放时可看到波峰从中心向外传播，体现三维声波的球面扩散。"
+                f"当前波长 λ={wavelength:.3f} m，相位推进 {self.phase_value:.2f} 周期。播放时可看到波峰从中心向外传播。"
             )
         elif mode == "双声源三维干涉":
             spacing = self.param_a.value()
             phase = self.param_b.value()
-            xx, yy, pressure, wavelength = two_source_wave_field(self.freq_spin.value(), spacing, phase, self.time_value)
+            xx, yy, pressure, wavelength = two_source_wave_field(frequency, spacing, phase, animation_time)
             title = "双声源三维干涉瞬时声压"
             self.param_hint.setText("参数 A：声源间距 d / m；参数 B：相位差 Δφ / rad。")
             self.summary_label.setText(
-                f"声源间距 d={spacing:.2f} m，相位差 Δφ={phase:.2f} rad。动态图中波面叠加会形成移动的相长/相消区域。"
+                f"声源间距 d={spacing:.2f} m，相位差 Δφ={phase:.2f} rad，相位推进 {self.phase_value:.2f} 周期。"
+                "播放时红蓝声压峰谷会交替推进，节点区保持相对稳定，可直接观察干涉形成过程。"
             )
         else:
             mx = max(1, round(self.param_a.value()))
             my = max(1, round(self.param_b.value()))
-            xx, yy, pressure, rel = room_mode_field(mx, my, 1, self.time_value, self.freq_spin.value())
+            xx, yy, pressure, rel = room_mode_field(mx, my, 1, animation_time, frequency)
             title = "矩形房间驻波模态截面"
             self.param_hint.setText("参数 A：x 方向模态阶数；参数 B：y 方向模态阶数；z 方向固定为 1。")
             self.summary_label.setText(
-                f"当前模态近似为 ({mx}, {my}, 1)，相对本征频率约 {rel:.2f}。动态图展示房间中固定节点与振荡声压。"
+                f"当前模态近似为 ({mx}, {my}, 1)，相对本征频率约 {rel:.2f}。播放时声压正负交替，节点线位置保持固定。"
             )
 
         surf = ax.plot_surface(xx, yy, pressure, cmap="RdBu_r", linewidth=0, antialiased=True, vmin=-1, vmax=1)
@@ -147,14 +150,14 @@ class Sound3DPage(QWidget):
         ax.set_ylabel("y / m", color=CHART_FG_MUTED)
         ax.set_zlabel("声压", color=CHART_FG_MUTED)
         ax.set_zlim(-1.1, 1.1)
-        ax.view_init(elev=28, azim=-55 + 20 * self.time_value)
+        ax.view_init(elev=28, azim=-55)
         ax.set_facecolor(CHART_BG)
         fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
         fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
 
     def on_tick(self) -> None:
-        self.time_value += 0.025
+        self.phase_value = (self.phase_value + 0.035) % 1.0
         self.refresh_plot()
 
     def start_animation(self) -> None:
@@ -164,7 +167,7 @@ class Sound3DPage(QWidget):
         self.timer.stop()
 
     def reset_animation(self) -> None:
-        self.time_value = 0.0
+        self.phase_value = 0.0
         self.refresh_plot()
 
     def apply_preset(self, preset: dict) -> None:
@@ -177,7 +180,7 @@ class Sound3DPage(QWidget):
         self.freq_spin.setValue(float(preset.get("frequency", self.freq_spin.value())))
         self.param_a.setValue(float(preset.get("param_a", self.param_a.value())))
         self.param_b.setValue(float(preset.get("param_b", self.param_b.value())))
-        self.time_value = 0.0
+        self.phase_value = 0.0
         self.refresh_plot()
 
     def export_figure(self) -> None:
