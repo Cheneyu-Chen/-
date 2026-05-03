@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from app.pages.advanced_acoustics_page import AdvancedAcousticsPage
 from app.pages.cases_page import CasesPage
 from app.pages.compare_page import ComparePage
+from app.pages.competition_page import CompetitionPage
 from app.pages.design_page import DesignPage
 from app.pages.home_page import HomePage
 from app.pages.modes_page import ModesPage
@@ -73,14 +74,15 @@ class MainWindow(QMainWindow):
         self.nav_buttons: list[tuple[QLabel, int]] = []
         nav_items = [
             ("平台总览", 0),
-            ("平台设计", 1),
-            ("一维驻波", 2),
-            ("二维模态", 3),
-            ("共振扫描", 4),
-            ("进阶声学", 5),
-            ("三维声波", 6),
-            ("教学案例", 7),
-            ("实验对比", 8),
+            ("参赛总览", 1),
+            ("平台设计", 2),
+            ("一维驻波", 3),
+            ("二维模态", 4),
+            ("共振扫描", 5),
+            ("进阶声学", 6),
+            ("三维声波", 7),
+            ("教学案例", 8),
+            ("实验对比", 9),
         ]
         for name, index in nav_items:
             btn = QLabel(name)
@@ -93,7 +95,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("v1.5 动态三维版")
+        footer = QLabel("v2.0 参赛展示版")
         footer.setObjectName("FooterLabel")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
@@ -101,6 +103,7 @@ class MainWindow(QMainWindow):
 
     def _init_pages(self) -> None:
         self.home_page = HomePage()
+        self.competition_page = CompetitionPage()
         self.design_page = DesignPage()
         self.standing_wave_page = StandingWavePage()
         self.modes_page = ModesPage()
@@ -112,6 +115,7 @@ class MainWindow(QMainWindow):
 
         for page in [
             self.home_page,
+            self.competition_page,
             self.design_page,
             self.standing_wave_page,
             self.modes_page,
@@ -143,21 +147,21 @@ class MainWindow(QMainWindow):
         target = preset.get("page")
         if target == "standing_wave":
             self.standing_wave_page.apply_preset(preset)
-            self.stack.setCurrentIndex(2)
-            self._set_active_nav(2)
-        elif target == "modes":
-            self.modes_page.apply_preset(preset)
             self.stack.setCurrentIndex(3)
             self._set_active_nav(3)
-        elif target == "resonance":
-            self.resonance_page.apply_preset(preset)
+        elif target == "modes":
+            self.modes_page.apply_preset(preset)
             self.stack.setCurrentIndex(4)
             self._set_active_nav(4)
-        elif target == "advanced":
-            self.advanced_page.apply_preset(preset)
+        elif target == "resonance":
+            self.resonance_page.apply_preset(preset)
             self.stack.setCurrentIndex(5)
             self._set_active_nav(5)
-        elif target == "sound3d":
-            self.sound3d_page.apply_preset(preset)
+        elif target == "advanced":
+            self.advanced_page.apply_preset(preset)
             self.stack.setCurrentIndex(6)
             self._set_active_nav(6)
+        elif target == "sound3d":
+            self.sound3d_page.apply_preset(preset)
+            self.stack.setCurrentIndex(7)
+            self._set_active_nav(7)

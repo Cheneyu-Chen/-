@@ -50,32 +50,46 @@ CASES = [
         "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.25, "points": 320},
     },
     {
-        "name": "案例 7：声子晶体带隙",
+        "name": "案例 7：单缝声衍射",
+        "target": "进阶声学",
+        "desc": "进阶实验：声波通过狭缝后发生衍射，主瓣宽度与波长、缝宽和观测距离有关。适合讲解惠更斯原理和孔径限制下的声场扩展。",
+        "actions": "一键设置：单缝声衍射，频率 680 Hz，缝宽 0.18 m，屏幕距离 1.60 m。",
+        "preset": {"page": "advanced", "experiment": "单缝声衍射", "frequency": 680.0, "param_a": 0.18, "param_b": 1.6},
+    },
+    {
+        "name": "案例 8：声子晶体带隙",
         "target": "进阶声学",
         "desc": "高阶实验：周期结构会让特定频率的声波无法传播。通过改变质量比和刚度比，观察声学支、光学支和带隙宽度。",
         "actions": "一键设置：一维声子晶体带隙，质量比 3.00，刚度比 0.60。",
         "preset": {"page": "advanced", "experiment": "一维声子晶体带隙", "frequency": 800.0, "param_a": 3.0, "param_b": 0.6},
     },
     {
-        "name": "案例 8：亥姆霍兹共鸣吸声",
+        "name": "案例 9：亥姆霍兹共鸣吸声",
         "target": "进阶声学",
         "desc": "高阶实验：局域共振器会在目标频段强吸声，是消声器、建筑声学和声学超材料的基本单元。",
         "actions": "一键设置：亥姆霍兹共鸣吸声，共鸣频率 420 Hz，阻尼 0.08。",
         "preset": {"page": "advanced", "experiment": "亥姆霍兹共鸣吸声", "frequency": 420.0, "param_a": 0.08, "param_b": 0.0},
     },
     {
-        "name": "案例 9：三维点声源球面波",
+        "name": "案例 10：三维点声源球面波",
         "target": "三维声波",
         "desc": "动态实验：观察声压波峰从点声源向外传播，理解三维声波的球面扩散和波长概念。",
         "actions": "一键设置：点声源球面波，频率 420 Hz。",
         "preset": {"page": "sound3d", "mode": "点声源球面波", "frequency": 420.0, "param_a": 0.8, "param_b": 0.0},
     },
     {
-        "name": "案例 10：三维双声源干涉",
+        "name": "案例 11：三维双声源干涉",
         "target": "三维声波",
         "desc": "动态实验：两个声源同时发声，三维声压曲面展示相长和相消干涉区域随时间变化。",
         "actions": "一键设置：双声源三维干涉，频率 620 Hz，声源间距 0.65 m，相位差 0.80 rad。",
         "preset": {"page": "sound3d", "mode": "双声源三维干涉", "frequency": 620.0, "param_a": 0.65, "param_b": 0.8},
+    },
+    {
+        "name": "案例 12：矩形房间三维驻波",
+        "target": "三维声波",
+        "desc": "应用实验：房间长、宽、高方向同时形成驻波模态，声压分布会出现空间热点和静区。适合解释室内声学、低频驻波和吸声布置。",
+        "actions": "一键设置：矩形房间驻波模态，频率 180 Hz，模态阶数近似为 (3, 2, 1)。",
+        "preset": {"page": "sound3d", "mode": "矩形房间驻波模态", "frequency": 180.0, "param_a": 3.0, "param_b": 2.0},
     },
 ]
 
@@ -91,7 +105,8 @@ class CasesPage(QWidget):
 
         overview, overview_layout = make_card("教学案例一键跳转")
         overview_layout.addWidget(muted_label(
-            "选择案例后点击“一键进入案例”，平台会跳转到对应仿真页并自动设置参数。新增的进阶案例用于展示声学超材料、带隙与局域共振。"
+            "选择案例后点击“一键进入案例”，平台会跳转到对应仿真页并自动设置参数。案例按基础、进阶、三维与应用拓展组织，"
+            "便于在课堂演示和竞赛答辩中快速复现实验现象。"
         ))
         layout.addWidget(overview)
 
