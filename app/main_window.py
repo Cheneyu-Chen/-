@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QStackedWidget,
+    QStackedLayout,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +23,8 @@ from app.pages.resonance_page import ResonancePage
 from app.pages.sound3d_page import Sound3DPage
 from app.pages.standing_wave_page import StandingWavePage
 from app.theme import APP_TITLE, build_stylesheet
+from app.widgets.common import apply_glass_effect
+from app.widgets.glass import AnimatedGlassBackground
 
 
 class MainWindow(QMainWindow):
@@ -34,7 +37,18 @@ class MainWindow(QMainWindow):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
+        shell = QWidget()
+        shell_layout = QStackedLayout(shell)
+        shell_layout.setContentsMargins(0, 0, 0, 0)
+        shell_layout.setStackingMode(QStackedLayout.StackAll)
+
+        self.background = AnimatedGlassBackground()
+        self.background.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        shell_layout.addWidget(self.background)
+
         main_widget = QWidget()
+        main_widget.setObjectName("MainContent")
+        main_widget.setAttribute(Qt.WA_StyledBackground, True)
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -51,7 +65,11 @@ class MainWindow(QMainWindow):
         content_layout.addWidget(self.stack)
         main_layout.addWidget(content_area, 1)
 
-        self.setCentralWidget(main_widget)
+        shell_layout.addWidget(main_widget)
+        shell_layout.setCurrentWidget(main_widget)
+        self.background.lower()
+        main_widget.raise_()
+        self.setCentralWidget(shell)
         self._connect_nav_signals()
         self._on_nav_click(self.nav_buttons[0][0], 0)
 
@@ -59,6 +77,7 @@ class MainWindow(QMainWindow):
         panel = QFrame()
         panel.setObjectName("SidePanel")
         panel.setFixedWidth(260)
+        apply_glass_effect(panel, hoverable=False)
 
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(14, 20, 14, 20)
