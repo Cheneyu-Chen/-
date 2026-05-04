@@ -17,6 +17,7 @@ from app.pages.cases_page import CasesPage
 from app.pages.compare_page import ComparePage
 from app.pages.competition_page import CompetitionPage
 from app.pages.design_page import DesignPage
+from app.pages.enhancement_page import EnhancementPage
 from app.pages.home_page import HomePage
 from app.pages.modes_page import ModesPage
 from app.pages.resonance_page import ResonancePage
@@ -102,6 +103,7 @@ class MainWindow(QMainWindow):
             ("三维声波", 7),
             ("教学案例", 8),
             ("实验对比", 9),
+            ("增强工具", 10),
         ]
         for name, index in nav_items:
             btn = QLabel(name)
@@ -131,6 +133,7 @@ class MainWindow(QMainWindow):
         self.sound3d_page = Sound3DPage()
         self.cases_page = CasesPage()
         self.compare_page = ComparePage()
+        self.enhancement_page = EnhancementPage()
 
         for page in [
             self.home_page,
@@ -143,6 +146,7 @@ class MainWindow(QMainWindow):
             self.sound3d_page,
             self.cases_page,
             self.compare_page,
+            self.enhancement_page,
         ]:
             self.stack.addWidget(page)
 

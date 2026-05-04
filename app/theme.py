@@ -193,7 +193,7 @@ def build_stylesheet() -> str:
     QPushButton:pressed {
         background-color: rgba(17, 94, 89, 0.96);
     }
-    QComboBox, QDoubleSpinBox, QSpinBox {
+    QComboBox, QDoubleSpinBox, QSpinBox, QPlainTextEdit {
         background-color: rgba(255, 255, 255, 0.72);
         border: 1px solid rgba(255, 255, 255, 0.84);
         border-radius: 6px;
@@ -204,9 +204,33 @@ def build_stylesheet() -> str:
         selection-background-color: #ccfbf1;
         selection-color: #115e59;
     }
-    QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus {
+    QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus, QPlainTextEdit:focus {
         background-color: rgba(255, 255, 255, 0.88);
         border-color: rgba(15, 118, 110, 0.62);
+    }
+    QPlainTextEdit {
+        padding: 8px;
+    }
+    QTabWidget::pane {
+        border: none;
+        background-color: transparent;
+    }
+    QTabBar::tab {
+        background-color: rgba(255, 255, 255, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 6px;
+        color: #374151;
+        padding: 8px 14px;
+        margin-right: 6px;
+    }
+    QTabBar::tab:selected {
+        background-color: rgba(204, 251, 241, 0.82);
+        border-color: rgba(20, 184, 166, 0.42);
+        color: #115e59;
+        font-weight: 700;
+    }
+    QTabBar::tab:hover {
+        background-color: rgba(255, 255, 255, 0.72);
     }
     QComboBox::drop-down {
         border: none;
