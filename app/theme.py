@@ -159,6 +159,23 @@ def build_stylesheet() -> str:
         background-color: #0f766e;
         border-radius: 5px;
     }
+    QPushButton#SplashEnterButton {
+        background-color: rgba(15, 118, 110, 0.96);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.76);
+        border-radius: 8px;
+        padding: 12px 18px;
+        font-size: 16px;
+        font-weight: 800;
+        min-height: 42px;
+    }
+    QPushButton#SplashEnterButton:hover {
+        background-color: rgba(13, 148, 136, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.92);
+    }
+    QPushButton#SplashEnterButton:pressed {
+        background-color: rgba(17, 94, 89, 0.98);
+    }
     QPushButton {
         background-color: rgba(15, 118, 110, 0.92);
         color: #ffffff;
