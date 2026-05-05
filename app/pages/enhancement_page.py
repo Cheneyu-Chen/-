@@ -67,7 +67,7 @@ class EnhancementPage(QWidget):
 
         controls, control_layout = make_card("实验照片导入")
         self.photo_template = QComboBox()
-        self.photo_template.addItems(["矩形克拉尼图形", "圆形克拉尼图形", "三角形薄板模态"])
+        self.photo_template.addItems(["一维驻波", "二维驻波", "共振曲线", "矩形克拉尼图形", "圆形克拉尼图形", "三角形薄板模态"])
         self.photo_primary = QSpinBox()
         self.photo_primary.setRange(1, 8)
         self.photo_primary.setValue(3)

@@ -61,14 +61,39 @@ def resize_to(image: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
 
 
 def simulation_template(template: str, primary: int = 3, secondary: int = 2, resolution: int = 220) -> np.ndarray:
-    if template == "圆形克拉尼图形":
+    if template == "一维驻波":
+        x = np.linspace(0, 1, resolution)
+        y = np.linspace(-1, 1, resolution)
+        xx, yy = np.meshgrid(x, y)
+        mode = max(primary, 1)
+        curve = 0.62 * np.sin(mode * np.pi * xx)
+        line = np.exp(-((yy - curve) ** 2) / 0.010)
+        envelope = 0.24 * np.exp(-((yy - 0.62 * np.abs(np.sin(mode * np.pi * xx))) ** 2) / 0.022)
+        arr = np.maximum(line, envelope)
+    elif template == "二维驻波":
+        x = np.linspace(0, 1, resolution)
+        y = np.linspace(0, 1, resolution)
+        xx, yy = np.meshgrid(x, y)
+        arr = np.abs(np.sin(max(primary, 1) * np.pi * xx) * np.sin(max(secondary, 1) * np.pi * yy))
+    elif template == "共振曲线":
+        x = np.linspace(0.35, 2.4, resolution)
+        y = np.linspace(0, 1, resolution)
+        xx, yy = np.meshgrid(x, y)
+        damping = max(0.035 * max(secondary, 1), 0.035)
+        response = 1.0 / np.sqrt((1 - xx**2) ** 2 + (2 * damping * xx) ** 2)
+        response = response / max(float(response.max()), 1e-9)
+        curve = 0.08 + 0.82 * response
+        arr = np.exp(-((yy - curve) ** 2) / 0.004)
+        arr += 0.32 * np.exp(-((yy - 0.08) ** 2) / 0.002)
+    elif template == "圆形克拉尼图形":
         _, _, mode, _ = circular_mode(max(primary - 1, 0), max(secondary, 1), resolution=resolution)
+        arr = np.abs(np.ma.filled(mode, 0.0))
     elif template == "三角形薄板模态":
         _, _, mode, _ = triangular_mode(max(primary, 1), max(secondary, 1), resolution=resolution)
+        arr = np.abs(np.ma.filled(mode, 0.0))
     else:
         _, _, mode, _ = rectangular_mode(max(primary, 1), max(secondary, 1), resolution=resolution)
-
-    arr = np.abs(np.ma.filled(mode, 0.0))
+        arr = np.abs(np.ma.filled(mode, 0.0))
     arr -= arr.min()
     arr /= max(float(arr.max()), 1e-9)
     return arr
