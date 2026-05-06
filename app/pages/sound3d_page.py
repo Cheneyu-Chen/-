@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QComboBox,
@@ -15,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.core.sound3d import room_mode_field, spherical_wave_field, two_source_wave_field
+from app.core.sound3d import room_mode_slices, spherical_wave_field, two_source_wave_field
 from app.theme import CHART_BG, CHART_FG, CHART_FG_MUTED
 from app.widgets.common import make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
@@ -85,8 +87,8 @@ class Sound3DPage(QWidget):
 
         note_card, note_layout = make_card("动态演示说明")
         note_layout.addWidget(muted_label(
-            "本页固定观察视角，用连续相位推进声压场本身：波峰、波谷和干涉区域会随时间演化，"
-            "而不是把一张已经绘制完成的图像进行旋转。"
+            "本页固定观察视角，用连续相位推进声压场本身。球面波和双声源干涉显示瞬时声压曲面，"
+            "房间驻波显示三个正交截面，便于观察三维空间中的节点面和声压热点。"
         ))
         control_layout.addWidget(note_card)
         control_layout.addStretch(1)
@@ -119,7 +121,9 @@ class Sound3DPage(QWidget):
 
         if mode == "点声源球面波":
             xx, yy, pressure, wavelength = spherical_wave_field(frequency, animation_time)
-            title = "点声源球面波瞬时声压"
+            surf = ax.plot_surface(xx, yy, pressure, cmap="RdBu_r", linewidth=0, antialiased=True, vmin=-1, vmax=1)
+            self._style_surface_axes(ax, "点声源球面波瞬时声压")
+            fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
             self.param_hint.setText("参数 A、B 在点声源模式中不使用。")
             self.summary_label.setText(
                 f"当前波长 λ={wavelength:.3f} m，相位推进 {self.phase_value:.2f} 周期。播放时可看到波峰从中心向外传播。"
@@ -127,24 +131,31 @@ class Sound3DPage(QWidget):
         elif mode == "双声源三维干涉":
             spacing = self.param_a.value()
             phase = self.param_b.value()
-            xx, yy, pressure, wavelength = two_source_wave_field(frequency, spacing, phase, animation_time)
-            title = "双声源三维干涉瞬时声压"
+            xx, yy, pressure, _ = two_source_wave_field(frequency, spacing, phase, animation_time)
+            surf = ax.plot_surface(xx, yy, pressure, cmap="RdBu_r", linewidth=0, antialiased=True, vmin=-1, vmax=1)
+            self._style_surface_axes(ax, "双声源三维干涉瞬时声压")
+            fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
             self.param_hint.setText("参数 A：声源间距 d / m；参数 B：相位差 Δφ / rad。")
             self.summary_label.setText(
                 f"声源间距 d={spacing:.2f} m，相位差 Δφ={phase:.2f} rad，相位推进 {self.phase_value:.2f} 周期。"
-                "播放时红蓝声压峰谷会交替推进，节点区保持相对稳定，可直接观察干涉形成过程。"
+                "播放时红蓝声压峰谷交替推进，可观察相长和相消干涉区域。"
             )
         else:
             mx = max(1, round(self.param_a.value()))
             my = max(1, round(self.param_b.value()))
-            xx, yy, pressure, rel = room_mode_field(mx, my, 1, animation_time, frequency)
-            title = "矩形房间驻波模态截面"
-            self.param_hint.setText("参数 A：x 方向模态阶数；参数 B：y 方向模态阶数；z 方向固定为 1。")
+            mz = max(1, min(4, round(frequency / 180.0)))
+            slices = room_mode_slices(mx, my, mz, animation_time, frequency)
+            self._draw_room_mode(ax, slices, mx, my, mz)
+            self.param_hint.setText("参数 A：x 方向模态阶数；参数 B：y 方向模态阶数；z 方向阶数由频率估算。")
             self.summary_label.setText(
-                f"当前模态近似为 ({mx}, {my}, 1)，相对本征频率约 {rel:.2f}。播放时声压正负交替，节点线位置保持固定。"
+                f"当前房间模态近似为 ({mx}, {my}, {mz})，相对本征频率约 {slices['relative_frequency']:.2f}。"
+                "图中同时显示水平截面、纵向截面和横向截面，可观察三维空间中的节点面和声压热点。"
             )
 
-        surf = ax.plot_surface(xx, yy, pressure, cmap="RdBu_r", linewidth=0, antialiased=True, vmin=-1, vmax=1)
+        fig.patch.set_facecolor(CHART_BG)
+        self.canvas.draw_idle()
+
+    def _style_surface_axes(self, ax, title: str) -> None:
         ax.set_title(title, color=CHART_FG)
         ax.set_xlabel("x / m", color=CHART_FG_MUTED)
         ax.set_ylabel("y / m", color=CHART_FG_MUTED)
@@ -152,9 +163,46 @@ class Sound3DPage(QWidget):
         ax.set_zlim(-1.1, 1.1)
         ax.view_init(elev=28, azim=-55)
         ax.set_facecolor(CHART_BG)
-        fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
-        fig.patch.set_facecolor(CHART_BG)
-        self.canvas.draw_idle()
+
+    def _draw_room_mode(self, ax, slices: dict, mx: int, my: int, mz: int) -> None:
+        cmap = plt.get_cmap("RdBu_r")
+        norm = plt.Normalize(-1, 1)
+
+        for key, alpha in [("xy", 0.86), ("yz", 0.78), ("xz", 0.78)]:
+            sx, sy, sz, pressure = slices[key]
+            colors = cmap(norm(pressure))
+            colors[..., -1] = alpha
+            ax.plot_surface(sx, sy, sz, facecolors=colors, rstride=1, cstride=1, linewidth=0, shade=False, antialiased=False)
+
+        self._draw_room_box(ax)
+        sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+        sm.set_array([])
+        ax.figure.colorbar(sm, ax=ax, shrink=0.65, pad=0.08, label="声压")
+
+        ax.set_title(f"矩形房间驻波模态：({mx}, {my}, {mz})", color=CHART_FG)
+        ax.set_xlabel("x / L", color=CHART_FG_MUTED)
+        ax.set_ylabel("y / W", color=CHART_FG_MUTED)
+        ax.set_zlabel("z / H", color=CHART_FG_MUTED)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_zlim(0, 1)
+        ax.set_box_aspect((1.25, 1.0, 0.75))
+        ax.view_init(elev=24, azim=-42)
+        ax.set_facecolor(CHART_BG)
+
+    def _draw_room_box(self, ax) -> None:
+        corners = np.array([
+            [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+            [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
+        ])
+        edges = [
+            (0, 1), (1, 2), (2, 3), (3, 0),
+            (4, 5), (5, 6), (6, 7), (7, 4),
+            (0, 4), (1, 5), (2, 6), (3, 7),
+        ]
+        for start, end in edges:
+            xs, ys, zs = zip(corners[start], corners[end])
+            ax.plot(xs, ys, zs, color=CHART_FG_MUTED, linewidth=0.8, alpha=0.55)
 
     def on_tick(self) -> None:
         self.phase_value = (self.phase_value + 0.035) % 1.0
