@@ -13,10 +13,10 @@ class CompetitionPage(QWidget):
         layout.setSpacing(12)
 
         title_card, title_layout = make_card()
-        title = QLabel("最终参赛作品总览")
+        title = QLabel("作品总览")
         title.setObjectName("TitleLabel")
         subtitle = QLabel(
-            "本页用于答辩快速介绍：作品解决什么教学问题、包含哪些实验、创新点在哪里、如何验证结果。"
+            "本页汇总平台的物理内容、实验矩阵、核心特点和演示路线，便于快速了解系统整体结构。"
         )
         subtitle.setObjectName("SubtitleLabel")
         subtitle.setWordWrap(True)
@@ -33,8 +33,8 @@ class CompetitionPage(QWidget):
             make_metric("实验数量", "12 个教学案例", "覆盖驻波、模态、共振、干涉、衍射、带隙、吸声和三维声波。"),
         ))
         metrics_layout.addWidget(two_col_row(
-            make_metric("核心亮点", "动态 + 三维 + 增强分析", "支持声场演化、照片相似度、任意边界和自动报告。"),
-            make_metric("技术实现", "Python 自主可控", "PySide6 界面、NumPy/SciPy 数值、Matplotlib 可视化。"),
+            make_metric("核心特点", "动态 + 三维 + 增强分析", "支持声场演化、照片相似度、任意边界和自动报告。"),
+            make_metric("技术实现", "Python 自主实现", "PySide6 界面、NumPy/SciPy 数值、Matplotlib 可视化。"),
         ))
         layout.addWidget(metrics)
 
@@ -47,19 +47,19 @@ class CompetitionPage(QWidget):
         ))
         layout.addWidget(matrix)
 
-        innovation, innovation_layout = make_card("创新点")
+        innovation, innovation_layout = make_card("核心特点")
         innovation_layout.addWidget(muted_label(
-            "1. 从一维到三维构建声场实验链条，形成“基础-进阶-前沿”的内容层次。\n"
-            "2. 采用动态演示而非单张结果图，展示波峰传播、相位推进、扫频和模态振荡过程。\n"
-            "3. 每个案例支持一键跳转和参数预设，适合课堂演示和竞赛答辩复现。\n"
-            "4. 将声学超材料中的带隙与局域共振纳入平台，提升作品前沿性。\n"
-            "5. 增加照片相似度、自定义多边形有限差分、二维超材料阵列和自动报告生成，支撑完整参赛报告。"
+            "1. 从一维到三维构建声场实验链条，形成基础、进阶、应用的内容层次。\n"
+            "2. 采用动态演示展示波峰传播、相位推进、扫频和模态振荡过程。\n"
+            "3. 每个案例支持一键跳转和参数预设，适合课堂演示和重复实验。\n"
+            "4. 将声学超材料中的带隙与局域共振纳入平台，连接工程应用。\n"
+            "5. 提供照片相似度、自定义多边形有限差分、二维超材料阵列和自动报告生成。"
         ))
         layout.addWidget(innovation)
 
-        route, route_layout = make_card("答辩演示路线")
+        route, route_layout = make_card("推荐演示路线")
         route_layout.addWidget(muted_label(
-            "推荐演示顺序：平台总览 -> 参赛总览 -> 一维驻波播放 -> 二维克拉尼模态播放 -> 共振扫描 -> "
+            "平台总览 -> 作品总览 -> 一维驻波播放 -> 二维克拉尼模态播放 -> 共振扫描 -> "
             "单缝声衍射 -> 声子晶体带隙 -> 三维房间驻波 -> 增强工具 -> 实验对比与课程联系。"
         ))
         layout.addWidget(route)

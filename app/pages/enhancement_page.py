@@ -45,9 +45,9 @@ class EnhancementPage(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
-        intro, intro_layout = make_card("参赛增强工具")
+        intro, intro_layout = make_card("增强分析工具")
         intro_layout.addWidget(muted_label(
-            "本页把后续升级方向做成可演示功能：实验照片导入与相似度计算、自定义多边形边界、有限差分薄板求解、"
+            "本页提供实验照片导入与相似度计算、自定义多边形边界、有限差分薄板求解、"
             "二维声学超材料阵列和自动生成实验报告。"
         ))
         root.addWidget(intro)
@@ -221,7 +221,7 @@ class EnhancementPage(QWidget):
         generate_btn = QPushButton("生成 Markdown 报告")
         generate_btn.clicked.connect(self.generate_report)
         control_layout.addWidget(generate_btn)
-        control_layout.addWidget(muted_label("报告会汇总平台结构、增强工具结果、课程联系、误差分析和后续展望，输出到 outputs 目录。"))
+        control_layout.addWidget(muted_label("报告会汇总平台结构、分析结果、课程联系和误差分析，输出到 outputs 目录。"))
         control_layout.addStretch(1)
         layout.addWidget(controls, 0)
 
@@ -394,9 +394,9 @@ class EnhancementPage(QWidget):
 
 对应大学物理中的机械波、驻波、干涉、衍射、受迫振动、共振、阻尼、本征值问题和二维/三维场分布。
 
-## 后续展望
+## 结论
 
-后续可加入更高精度有限元求解、实验照片自动配准、真实材料参数反演、复杂超材料单元库和一键生成 PDF 报告。
+仿真结果、照片相似度和参数分析共同构成实验解释链条，可用于展示声场分布、边界条件影响和工程应用规律。
 """
         if hasattr(self, "report_preview"):
             self.report_preview.setPlainText(report)

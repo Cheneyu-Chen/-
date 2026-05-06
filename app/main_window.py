@@ -94,7 +94,7 @@ class MainWindow(QMainWindow):
         self.nav_buttons: list[tuple[QLabel, int]] = []
         nav_items = [
             ("平台总览", 0),
-            ("参赛总览", 1),
+            ("作品总览", 1),
             ("平台设计", 2),
             ("一维驻波", 3),
             ("二维模态", 4),
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("v2.0 参赛展示版")
+        footer = QLabel("声学仿真平台")
         footer.setObjectName("FooterLabel")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)

@@ -68,7 +68,7 @@ class SplashScreen(QWidget):
         card_layout.setSpacing(18)
         content_layout.addWidget(card)
 
-        badge = QLabel("最终参赛展示版  v2.0")
+        badge = QLabel("声学实验仿真平台")
         badge.setObjectName("SplashBadge")
         badge.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(badge, 0, Qt.AlignLeft)
