@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
 
-from app.widgets.common import make_card, muted_label
+from app.widgets.common import formula_label, make_card, muted_label
 
 
 class ComparePage(QWidget):
@@ -40,8 +40,13 @@ class ComparePage(QWidget):
         layout.addWidget(method_card)
 
         metrics_card, metrics_layout = make_card("评价指标")
+        metrics_layout.addWidget(formula_label(
+            "频率误差：ε_f = |fₛᵢₘ - fₑₓₚ| / fₑₓₚ",
+            "图案相似度：S = 0.68·C + 0.32·O",
+            "品质因数：Q ≈ f₀ / Δf",
+        ))
         metrics_layout.addWidget(muted_label(
-            "频率误差：|f_sim - f_exp| / f_exp，用于评价共振峰和本征频率预测。\n"
+            "频率误差用于评价共振峰和本征频率预测。\n"
             "图案相似度：比较节点线数量、交点位置、对称性和主瓣方向。\n"
             "参数敏感性：改变阻尼、边界、缝宽、声源间距或激励位置后，观察峰值、节点线和声场热点变化。\n"
             "教学有效性：学生能否从动态图像反推出模态阶数、边界条件、共振机制和工程应用。"

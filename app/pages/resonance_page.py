@@ -21,7 +21,7 @@ from app.theme import (
     CHART_LEGEND_FC, CHART_LINE_PRIMARY, CHART_LINE_RED, CHART_NODE_LINE,
     CHART_SPINE, CHART_TICK,
 )
-from app.widgets.common import make_card, muted_label
+from app.widgets.common import formula_label, make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
 
 
@@ -65,7 +65,7 @@ class ResonancePage(QWidget):
         form.addRow("起始频率 / Hz", self.start_freq)
         form.addRow("终止频率 / Hz", self.end_freq)
         form.addRow("本征频率 / Hz", self.natural_freq)
-        form.addRow("阻尼比", self.damping)
+        form.addRow("阻尼比 ζ", self.damping)
         form.addRow("采样点数", self.points)
         control_layout.addLayout(form)
 
@@ -79,9 +79,14 @@ class ResonancePage(QWidget):
         control_layout.addLayout(buttons)
 
         note_card, note_layout = make_card("理论对应")
+        note_layout.addWidget(formula_label(
+            "频率比：r = f / fₙ",
+            "幅频响应：|A| = 1 / √[(1 - r²)² + (2ζr)²]",
+            "品质因数：Q ≈ 1 / (2ζ)",
+            "共振条件：f ≈ fₙ",
+        ))
         note_layout.addWidget(muted_label(
-            "受迫振动的幅频响应可写成 |A| = 1 / √[(1-r²)² + (2ζr)²]，其中 r = f / fₙ。"
-            "当驱动频率接近本征频率时响应达到峰值；阻尼越小，峰越高且带宽越窄。"
+            "每一条公式单独成行显示。驱动频率接近本征频率时响应达到峰值；阻尼越小，峰越高且带宽越窄。"
         ))
         control_layout.addWidget(note_card)
         control_layout.addStretch(1)

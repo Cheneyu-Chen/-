@@ -95,3 +95,11 @@ def muted_label(text: str) -> QLabel:
     label.setWordWrap(True)
     label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
     return label
+
+
+def formula_label(*lines: str) -> QLabel:
+    label = QLabel("\n".join(lines))
+    label.setObjectName("FormulaLabel")
+    label.setWordWrap(False)
+    label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+    return label
