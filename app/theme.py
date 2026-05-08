@@ -203,7 +203,7 @@ def build_stylesheet() -> str:
     QPushButton:pressed {
         background-color: rgba(17, 94, 89, 0.96);
     }
-    QComboBox, QDoubleSpinBox, QSpinBox, QPlainTextEdit {
+    QComboBox, QPlainTextEdit {
         background-color: rgba(255, 255, 255, 0.72);
         border: 1px solid rgba(255, 255, 255, 0.84);
         border-radius: 6px;
@@ -214,9 +214,64 @@ def build_stylesheet() -> str:
         selection-background-color: #ccfbf1;
         selection-color: #115e59;
     }
+    QDoubleSpinBox, QSpinBox {
+        background-color: rgba(255, 255, 255, 0.74);
+        border: 1px solid rgba(255, 255, 255, 0.86);
+        border-radius: 7px;
+        padding: 3px 70px 3px 12px;
+        font-size: 14px;
+        color: #111827;
+        min-width: 154px;
+        min-height: 30px;
+        selection-background-color: #ccfbf1;
+        selection-color: #115e59;
+    }
+    QDoubleSpinBox:hover, QSpinBox:hover {
+        background-color: rgba(255, 255, 255, 0.84);
+        border-color: rgba(20, 184, 166, 0.36);
+    }
     QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus, QPlainTextEdit:focus {
         background-color: rgba(255, 255, 255, 0.88);
         border-color: rgba(15, 118, 110, 0.62);
+    }
+    QDoubleSpinBox::up-button, QSpinBox::up-button {
+        subcontrol-origin: border;
+        subcontrol-position: center right;
+        width: 31px;
+        height: 26px;
+        right: 4px;
+        border-left: 1px solid rgba(20, 184, 166, 0.22);
+        border-top-right-radius: 7px;
+        border-bottom-right-radius: 7px;
+        background-color: rgba(204, 251, 241, 0.58);
+    }
+    QDoubleSpinBox::down-button, QSpinBox::down-button {
+        subcontrol-origin: border;
+        subcontrol-position: center right;
+        width: 31px;
+        height: 26px;
+        right: 36px;
+        border-left: 1px solid rgba(20, 184, 166, 0.22);
+        border-right: 1px solid rgba(20, 184, 166, 0.12);
+        background-color: rgba(204, 251, 241, 0.58);
+    }
+    QDoubleSpinBox::up-button:hover, QSpinBox::up-button:hover,
+    QDoubleSpinBox::down-button:hover, QSpinBox::down-button:hover {
+        background-color: rgba(153, 246, 228, 0.84);
+    }
+    QDoubleSpinBox::up-button:pressed, QSpinBox::up-button:pressed,
+    QDoubleSpinBox::down-button:pressed, QSpinBox::down-button:pressed {
+        background-color: rgba(20, 184, 166, 0.48);
+    }
+    QDoubleSpinBox::up-arrow, QSpinBox::up-arrow {
+        image: url(app/right_arrow.svg);
+        width: 14px;
+        height: 14px;
+    }
+    QDoubleSpinBox::down-arrow, QSpinBox::down-arrow {
+        image: url(app/left_arrow.svg);
+        width: 14px;
+        height: 14px;
     }
     QPlainTextEdit {
         padding: 8px;
