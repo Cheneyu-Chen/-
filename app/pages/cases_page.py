@@ -106,7 +106,7 @@ class CasesPage(QWidget):
         overview, overview_layout = make_card("教学案例一键跳转")
         overview_layout.addWidget(muted_label(
             "选择案例后点击“一键进入案例”，平台会跳转到对应仿真页并自动设置参数。案例按基础、进阶、三维与应用拓展组织，"
-            "便于在课堂演示和竞赛答辩中快速复现实验现象。"
+            "便于在课堂展示和重复实验中快速复现实验现象。"
         ))
         layout.addWidget(overview)
 

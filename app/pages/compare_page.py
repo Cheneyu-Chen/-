@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
 
-from app.widgets.common import make_card, muted_label
+from app.widgets.common import formula_label, make_card, muted_label
 
 
 class ComparePage(QWidget):
@@ -25,8 +25,8 @@ class ComparePage(QWidget):
 
         purpose_card, purpose_layout = make_card("实验验证目标")
         purpose_layout.addWidget(muted_label(
-            "最终参赛作品不仅展示仿真图像，还要说明仿真结果是否符合物理规律。建议采用“真实实验照片、仿真热图、理论节点线”三列对照，"
-            "把克拉尼图形、共振峰、声场干涉和三维驻波的关键特征逐一对应起来。"
+            "平台通过真实实验照片、仿真热图和理论节点线的对照，检验仿真结果与物理图像之间的对应关系。"
+            "克拉尼图形、共振峰、声场干涉和三维驻波均可提取关键特征进行比较。"
         ))
         layout.addWidget(purpose_card)
 
@@ -35,15 +35,20 @@ class ComparePage(QWidget):
             "1. 采集实验图：在薄板或膜上撒细沙，用扬声器或振子扫频，记录稳定图案。\n"
             "2. 建立仿真条件：选择相近的几何形状、边界条件、材料参数和模态阶数。\n"
             "3. 提取关键特征：用零等值线表示节点线，用峰值位置表示共振频率，用空间热点表示三维声压集中区。\n"
-            "4. 解释误差来源：讨论夹持不理想、板厚不均、激励点偏移、阻尼估计和材料参数误差。"
+            "4. 分析误差来源：讨论夹持、板厚、激励点、阻尼估计和材料参数带来的影响。"
         ))
         layout.addWidget(method_card)
 
-        metrics_card, metrics_layout = make_card("可写入报告的评价指标")
+        metrics_card, metrics_layout = make_card("评价指标")
+        metrics_layout.addWidget(formula_label(
+            "频率误差：ε_f = |fₛᵢₘ - fₑₓₚ| / fₑₓₚ",
+            "图案相似度：S = 0.68·C + 0.32·O",
+            "品质因数：Q ≈ f₀ / Δf",
+        ))
         metrics_layout.addWidget(muted_label(
-            "频率误差：|f_sim - f_exp| / f_exp，用于评价共振峰和本征频率预测。\n"
+            "频率误差用于评价共振峰和本征频率预测。\n"
             "图案相似度：比较节点线数量、交点位置、对称性和主瓣方向。\n"
-            "参数敏感性：改变阻尼、边界、缝宽、声源间距或激励位置后，观察峰值、节点线和声场热点如何变化。\n"
+            "参数敏感性：改变阻尼、边界、缝宽、声源间距或激励位置后，观察峰值、节点线和声场热点变化。\n"
             "教学有效性：学生能否从动态图像反推出模态阶数、边界条件、共振机制和工程应用。"
         ))
         layout.addWidget(metrics_card)
@@ -57,19 +62,17 @@ class ComparePage(QWidget):
         ))
         layout.addWidget(course_card)
 
-        report_card, report_layout = make_card("参赛报告材料清单")
+        report_card, report_layout = make_card("成果文件")
         report_layout.addWidget(muted_label(
-            "报告目录建议：选题背景 -> 产品定位 -> 开发环境 -> 平台架构 -> 物理原理 -> 数值模型 -> 功能界面 -> "
-            "教学案例 -> 实验对比 -> 课程联系 -> 创新点 -> 局限与展望 -> 分工与参考文献。\n"
-            "截图建议：总览页、每类实验的动态瞬间、一键案例跳转前后、三维声波页面、对比实验说明页和导出图像。"
+            "平台可导出仿真图像、实验图片对比图、相似度数据表和 Markdown 分析报告。"
+            "这些文件可用于课堂记录、实验讨论、作品展示和学习评价。"
         ))
         layout.addWidget(report_card)
 
-        discussion_card, discussion_layout = make_card("讨论与后续升级")
+        discussion_card, discussion_layout = make_card("分析结论")
         discussion_layout.addWidget(muted_label(
-            "当前优势：中文显示完整、参数可调、案例可复现、动静结合、二维与三维声场统一展示，并提供实验对比和报告写作支撑。\n"
-            "当前局限：复杂薄板仍以解析或近似模型为主，真实材料非均匀性和复杂夹具需要更高精度的有限元校准。\n"
-            "升级方向：加入实验照片导入与相似度计算、自定义多边形边界、有限差分薄板求解、声学超材料二维阵列和自动生成实验报告。"
+            "通过参数扫描和图像对比，可以观察边界条件、阻尼、激励位置和结构几何对声场分布的影响。"
+            "二维与三维结果相互补充，能够把抽象的声学规律转化为可观察、可比较、可复现的实验过程。"
         ))
         layout.addWidget(discussion_card)
 

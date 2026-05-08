@@ -76,6 +76,16 @@ def build_stylesheet() -> str:
         font-size: 13px;
         color: #374151;
     }
+    QLabel#FormulaLabel {
+        font-family: 'Cambria Math', 'Times New Roman', 'Microsoft YaHei UI', 'Microsoft YaHei', serif;
+        font-size: 15px;
+        color: #1f2937;
+        line-height: 1.65;
+        padding: 8px 10px;
+        background-color: rgba(255, 255, 255, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 6px;
+    }
     QFrame#SidePanel {
         background-color: rgba(255, 255, 255, 0.58);
         border-right: 1px solid rgba(255, 255, 255, 0.70);
@@ -159,6 +169,23 @@ def build_stylesheet() -> str:
         background-color: #0f766e;
         border-radius: 5px;
     }
+    QPushButton#SplashEnterButton {
+        background-color: rgba(15, 118, 110, 0.96);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.76);
+        border-radius: 8px;
+        padding: 12px 18px;
+        font-size: 16px;
+        font-weight: 800;
+        min-height: 42px;
+    }
+    QPushButton#SplashEnterButton:hover {
+        background-color: rgba(13, 148, 136, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.92);
+    }
+    QPushButton#SplashEnterButton:pressed {
+        background-color: rgba(17, 94, 89, 0.98);
+    }
     QPushButton {
         background-color: rgba(15, 118, 110, 0.92);
         color: #ffffff;
@@ -176,7 +203,7 @@ def build_stylesheet() -> str:
     QPushButton:pressed {
         background-color: rgba(17, 94, 89, 0.96);
     }
-    QComboBox, QDoubleSpinBox, QSpinBox {
+    QComboBox, QDoubleSpinBox, QSpinBox, QPlainTextEdit {
         background-color: rgba(255, 255, 255, 0.72);
         border: 1px solid rgba(255, 255, 255, 0.84);
         border-radius: 6px;
@@ -187,9 +214,33 @@ def build_stylesheet() -> str:
         selection-background-color: #ccfbf1;
         selection-color: #115e59;
     }
-    QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus {
+    QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus, QPlainTextEdit:focus {
         background-color: rgba(255, 255, 255, 0.88);
         border-color: rgba(15, 118, 110, 0.62);
+    }
+    QPlainTextEdit {
+        padding: 8px;
+    }
+    QTabWidget::pane {
+        border: none;
+        background-color: transparent;
+    }
+    QTabBar::tab {
+        background-color: rgba(255, 255, 255, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 6px;
+        color: #374151;
+        padding: 8px 14px;
+        margin-right: 6px;
+    }
+    QTabBar::tab:selected {
+        background-color: rgba(204, 251, 241, 0.82);
+        border-color: rgba(20, 184, 166, 0.42);
+        color: #115e59;
+        font-weight: 700;
+    }
+    QTabBar::tab:hover {
+        background-color: rgba(255, 255, 255, 0.72);
     }
     QComboBox::drop-down {
         border: none;

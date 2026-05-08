@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from app.core.modes import circular_mode, rectangular_mode, triangular_mode
 from app.theme import CHART_BG, CHART_CONTOUR, CHART_FG, CHART_FG_MUTED, CHART_SPINE, CHART_TICK
-from app.widgets.common import make_card, muted_label
+from app.widgets.common import formula_label, make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
 
 
@@ -91,6 +91,8 @@ class ModesPage(QWidget):
         right.addWidget(plot_card, 4)
 
         summary_card, summary_layout = make_card("仿真解释")
+        self.formula_display = formula_label("振型公式将在选择几何后显示")
+        summary_layout.addWidget(self.formula_display)
         self.summary_label = QLabel()
         self.summary_label.setWordWrap(True)
         summary_layout.addWidget(self.summary_label)
@@ -109,7 +111,8 @@ class ModesPage(QWidget):
             xx, yy, zz, relative_freq = rectangular_mode(primary, secondary, resolution=180)
             title = f"矩形膜模态：m={primary}，n={secondary}"
             extent = [0, 1, 0, 1]
-            model_text = "矩形边界近似满足四边固定，振型 φ = sin(mπx)sin(nπy)。"
+            model_text = "矩形边界近似满足四边固定，节点线由两个方向的正弦因子共同决定。"
+            formula_lines = ["矩形膜：φₘₙ(x,y) = sin(mπx)·sin(nπy)"]
             patch = None
         elif geometry_name.startswith("圆形"):
             order = primary - 1
@@ -117,18 +120,20 @@ class ModesPage(QWidget):
             xx, yy, zz, relative_freq = circular_mode(order, radial, resolution=220)
             title = f"圆形膜模态：角向阶数={order}，径向指标={radial}"
             extent = [-1, 1, -1, 1]
-            model_text = "圆形膜振型由贝塞尔函数 Jₘ(kr) 与 cos(mθ) 组合得到。"
+            model_text = "圆形膜振型由径向贝塞尔函数和角向余弦项共同决定。"
+            formula_lines = ["圆形膜：φₘ(r,θ) = Jₘ(kr)·cos(mθ)"]
             patch = patches.Circle((0, 0), 1, fill=False, edgecolor=CHART_SPINE, linewidth=1.2)
         else:
             xx, yy, zz, relative_freq = triangular_mode(primary, secondary, resolution=200)
             title = f"三角形膜近似模态：m={primary}，n={secondary}"
             extent = [0, 1, 0, 1]
             model_text = "三角边界会打破矩形对称性，节点线更容易形成斜向图案。"
+            formula_lines = ["三角形膜：φ ≈ sin(mπx)·sin(nπy)·sin((m+n)π(1-x-y))"]
             patch = patches.Polygon([[0, 0], [1, 0], [0, 1]], fill=False, edgecolor=CHART_SPINE, linewidth=1.2)
-        return xx, yy, zz, relative_freq, title, extent, model_text, patch
+        return xx, yy, zz, relative_freq, title, extent, model_text, formula_lines, patch
 
     def refresh_plot(self) -> None:
-        xx, yy, zz, relative_freq, title, extent, model_text, patch = self._mode_data()
+        xx, yy, zz, relative_freq, title, extent, model_text, formula_lines, patch = self._mode_data()
         temporal = np.cos(2 * np.pi * 0.7 * self.time_value)
         dynamic_zz = zz * temporal
 
@@ -152,6 +157,7 @@ class ModesPage(QWidget):
         fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
 
+        self.formula_display.setText("\n".join(formula_lines))
         self.summary_label.setText(
             f"{model_text} 当前相对本征频率约为 {relative_freq:.2f}。"
             f"瞬时相位系数为 {temporal:+.2f}，节点线位置不随时间移动。"

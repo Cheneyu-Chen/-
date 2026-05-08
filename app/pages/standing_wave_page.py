@@ -23,7 +23,7 @@ from app.theme import (
     CHART_LEGEND_FC, CHART_LINE_AMBER, CHART_LINE_GREEN, CHART_LINE_PRIMARY,
     CHART_NODE_LINE, CHART_SPINE, CHART_TICK,
 )
-from app.widgets.common import make_card, muted_label
+from app.widgets.common import formula_label, make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
 
 
@@ -80,7 +80,7 @@ class StandingWavePage(QWidget):
         form.addRow("模态阶数 n", self.mode_box)
         form.addRow("驱动频率 / Hz", self.freq_spin)
         form.addRow("驱动振幅", self.amp_spin)
-        form.addRow("阻尼比", self.damping_spin)
+        form.addRow("阻尼比 ζ", self.damping_spin)
         form.addRow("激励位置 x/L", self.excitation_spin)
         control_layout.addLayout(form)
 
@@ -100,10 +100,14 @@ class StandingWavePage(QWidget):
         control_layout.addWidget(export_btn)
 
         tips_card, tips_layout = make_card("理论对应")
+        tips_layout.addWidget(formula_label(
+            "固定-固定：y(0) = y(L) = 0",
+            "本征频率：fₙ = n·v / (2L)",
+            "固定-自由：fₙ = (n - 1/2)·v / (2L)",
+            "激励耦合：C = |φₙ(x₀)|",
+        ))
         tips_layout.addWidget(muted_label(
-            "固定-固定弦满足 y(0)=y(L)=0，本征频率为 fₙ = n v / 2L。"
-            "固定-自由边界只允许四分之一波长序列，频率近似为 fₙ = (n-1/2)v / 2L。"
-            "激励点位于节点附近时耦合系数接近 0，即使频率接近共振也难以激发该模态。"
+            "每一条公式单独成行显示。激励点位于节点附近时，耦合系数接近 0，即使频率接近共振也难以激发该模态。"
         ))
         control_layout.addWidget(tips_card)
         control_layout.addStretch(1)

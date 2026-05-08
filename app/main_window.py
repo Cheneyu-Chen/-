@@ -17,6 +17,7 @@ from app.pages.cases_page import CasesPage
 from app.pages.compare_page import ComparePage
 from app.pages.competition_page import CompetitionPage
 from app.pages.design_page import DesignPage
+from app.pages.enhancement_page import EnhancementPage
 from app.pages.home_page import HomePage
 from app.pages.modes_page import ModesPage
 from app.pages.resonance_page import ResonancePage
@@ -93,7 +94,7 @@ class MainWindow(QMainWindow):
         self.nav_buttons: list[tuple[QLabel, int]] = []
         nav_items = [
             ("平台总览", 0),
-            ("参赛总览", 1),
+            ("作品总览", 1),
             ("平台设计", 2),
             ("一维驻波", 3),
             ("二维模态", 4),
@@ -102,6 +103,7 @@ class MainWindow(QMainWindow):
             ("三维声波", 7),
             ("教学案例", 8),
             ("实验对比", 9),
+            ("增强工具", 10),
         ]
         for name, index in nav_items:
             btn = QLabel(name)
@@ -114,7 +116,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("v2.0 参赛展示版")
+        footer = QLabel("声学仿真平台")
         footer.setObjectName("FooterLabel")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
@@ -131,6 +133,7 @@ class MainWindow(QMainWindow):
         self.sound3d_page = Sound3DPage()
         self.cases_page = CasesPage()
         self.compare_page = ComparePage()
+        self.enhancement_page = EnhancementPage()
 
         for page in [
             self.home_page,
@@ -143,6 +146,7 @@ class MainWindow(QMainWindow):
             self.sound3d_page,
             self.cases_page,
             self.compare_page,
+            self.enhancement_page,
         ]:
             self.stack.addWidget(page)
 
