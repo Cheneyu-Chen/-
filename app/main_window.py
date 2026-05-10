@@ -157,7 +157,16 @@ class MainWindow(QMainWindow):
         for btn, index in self.nav_buttons:
             btn.mousePressEvent = lambda event, b=btn, i=index: self._on_nav_click(b, i)
 
+    def _reset_all_pages_animations(self) -> None:
+        for i in range(self.stack.count()):
+            page = self.stack.widget(i)
+            if hasattr(page, 'stop_animation'):
+                page.stop_animation()
+            if hasattr(page, 'reset_defaults'):
+                page.reset_defaults()
+
     def _on_nav_click(self, btn: QLabel, index: int) -> None:
+        self._reset_all_pages_animations()
         self.stack.setCurrentIndex(index)
         self._set_active_nav(index)
 
@@ -168,6 +177,7 @@ class MainWindow(QMainWindow):
             b.style().polish(b)
 
     def apply_case_preset(self, preset: dict) -> None:
+        self._reset_all_pages_animations()
         target = preset.get("page")
         if target == "standing_wave":
             self.standing_wave_page.apply_preset(preset)
