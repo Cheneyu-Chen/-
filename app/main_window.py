@@ -24,7 +24,7 @@ from app.pages.resonance_page import ResonancePage
 from app.pages.sound3d_page import Sound3DPage
 from app.pages.standing_wave_page import StandingWavePage
 from app.theme import APP_TITLE, build_stylesheet
-from app.widgets.common import apply_glass_effect
+from app.widgets.common import apply_glass_effect, polish_numeric_inputs
 from app.widgets.glass import AnimatedGlassBackground
 
 
@@ -149,6 +149,7 @@ class MainWindow(QMainWindow):
             self.enhancement_page,
         ]:
             self.stack.addWidget(page)
+            polish_numeric_inputs(page)
 
         self.cases_page.case_requested.connect(self.apply_case_preset)
 

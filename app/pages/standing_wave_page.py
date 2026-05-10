@@ -42,7 +42,7 @@ class StandingWavePage(QWidget):
 
         control_card, control_layout = make_card("一维驻波参数")
         form = QFormLayout()
-        form.setSpacing(10)
+        form.setSpacing(8)
 
         self.mode_box = QComboBox()
         self.mode_box.addItems(["1 阶", "2 阶", "3 阶", "4 阶"])
@@ -83,12 +83,17 @@ class StandingWavePage(QWidget):
         form.addRow("阻尼比 ζ", self.damping_spin)
         form.addRow("激励位置 x/L", self.excitation_spin)
         control_layout.addLayout(form)
+        control_layout.addSpacing(16)
 
         buttons = QHBoxLayout()
+        buttons.setSpacing(16)
+        buttons.setContentsMargins(0, 0, 0, 0)
         play_btn = QPushButton("播放")
         pause_btn = QPushButton("暂停")
         reset_btn = QPushButton("重置")
         export_btn = QPushButton("导出图像")
+        for btn in (play_btn, pause_btn, reset_btn, export_btn):
+            btn.setFixedHeight(44)
         play_btn.clicked.connect(self.start_animation)
         pause_btn.clicked.connect(self.stop_animation)
         reset_btn.clicked.connect(self.reset_defaults)

@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QAbstractSpinBox,
+    QFrame,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 def apply_glass_effect(widget: QWidget, hoverable: bool = True) -> None:
@@ -18,6 +26,47 @@ def apply_glass_effect(widget: QWidget, hoverable: bool = True) -> None:
         hover_filter = _CardHoverFilter(widget, shadow)
         widget._glass_hover_filter = hover_filter
         widget.installEventFilter(hover_filter)
+
+
+class _SpinBoxInteractionFilter(QObject):
+    """Make numeric inputs less twitchy in a dense control panel."""
+
+    def eventFilter(self, watched, event) -> bool:  # noqa: N802
+        if event.type() == QEvent.Wheel and isinstance(watched, QAbstractSpinBox):
+            if not watched.hasFocus():
+                event.ignore()
+                return True
+        return False
+
+
+def polish_numeric_inputs(root: QWidget) -> None:
+    """Apply consistent, larger hit areas to all spin boxes under *root*."""
+
+    for spin in root.findChildren(QAbstractSpinBox):
+        spin.setMinimumWidth(max(spin.minimumWidth(), 156))
+        spin.setMinimumHeight(max(spin.minimumHeight(), 34))
+        spin.setAccelerated(True)
+        spin.setKeyboardTracking(False)
+        spin.setAlignment(Qt.AlignCenter)
+        spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.UpDownArrows)
+        spin.setCorrectionMode(QAbstractSpinBox.CorrectionMode.CorrectToNearestValue)
+        spin.setAttribute(Qt.WA_Hover, True)
+        spin.setProperty("numericInput", "true")
+
+        try:
+            line_edit = spin.lineEdit()
+            line_edit.setAlignment(Qt.AlignCenter)
+            line_edit.setTextMargins(8, 0, 70, 0)
+        except RuntimeError:
+            pass
+
+        if not hasattr(spin, "_interaction_filter"):
+            interaction_filter = _SpinBoxInteractionFilter(spin)
+            spin._interaction_filter = interaction_filter
+            spin.installEventFilter(interaction_filter)
+
+        spin.style().unpolish(spin)
+        spin.style().polish(spin)
 
 
 class _CardHoverFilter(QObject):
