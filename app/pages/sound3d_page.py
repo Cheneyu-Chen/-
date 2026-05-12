@@ -87,7 +87,7 @@ class Sound3DPage(QWidget):
 
         note_card, note_layout = make_card("动态演示说明")
         note_layout.addWidget(muted_label(
-            "本页固定观察视角，用连续相位推进声压场本身。球面波和双声源干涉显示瞬时声压曲面，"
+            "仿真进行时可使用鼠标拖动旋转三维图像来从不同视角观察。用连续相位推进显示声压场本身。球面波和双声源干涉显示瞬时声压曲面，"
             "房间驻波显示三个正交截面，便于观察三维空间中的节点面和声压热点。"
         ))
         control_layout.addWidget(note_card)
@@ -109,21 +109,35 @@ class Sound3DPage(QWidget):
         right_container = QWidget()
         right_container.setLayout(right)
         root.addWidget(right_container, 1)
+        self.last_mode = None
         self.refresh_plot()
 
     def refresh_plot(self) -> None:
         fig = self.canvas.figure
-        fig.clear()
-        ax = fig.add_subplot(111, projection="3d")
         mode = self.mode_box.currentText()
         frequency = self.freq_spin.value()
         animation_time = self.phase_value / max(frequency, 1.0)
 
+        is_new = getattr(self, 'last_mode', None) != mode
+        self.last_mode = mode
+
+        if is_new or not fig.axes:
+            fig.clear()
+            ax = fig.add_subplot(111, projection="3d")
+        else:
+            ax = fig.axes[0]
+            # 仅移除旧的多边形集合和线条，不销毁坐标轴对象，从而保留鼠标拖动交互状态！
+            while ax.collections:
+                ax.collections[0].remove()
+            while ax.lines:
+                ax.lines[0].remove()
+
         if mode == "点声源球面波":
             xx, yy, pressure, wavelength = spherical_wave_field(frequency, animation_time)
             surf = ax.plot_surface(xx, yy, pressure, cmap="RdBu_r", linewidth=0, antialiased=True, vmin=-1, vmax=1)
-            self._style_surface_axes(ax, "点声源球面波瞬时声压")
-            fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
+            if is_new:
+                self._style_surface_axes(ax, "点声源球面波瞬时声压")
+                fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
             self.param_hint.setText("参数 A、B 在点声源模式中不使用。")
             self.summary_label.setText(
                 f"当前波长 λ={wavelength:.3f} m，相位推进 {self.phase_value:.2f} 周期。播放时可看到波峰从中心向外传播。"
@@ -133,8 +147,9 @@ class Sound3DPage(QWidget):
             phase = self.param_b.value()
             xx, yy, pressure, _ = two_source_wave_field(frequency, spacing, phase, animation_time)
             surf = ax.plot_surface(xx, yy, pressure, cmap="RdBu_r", linewidth=0, antialiased=True, vmin=-1, vmax=1)
-            self._style_surface_axes(ax, "双声源三维干涉瞬时声压")
-            fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
+            if is_new:
+                self._style_surface_axes(ax, "双声源三维干涉瞬时声压")
+                fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.08)
             self.param_hint.setText("参数 A：声源间距 d / m；参数 B：相位差 Δφ / rad。")
             self.summary_label.setText(
                 f"声源间距 d={spacing:.2f} m，相位差 Δφ={phase:.2f} rad，相位推进 {self.phase_value:.2f} 周期。"
@@ -145,14 +160,15 @@ class Sound3DPage(QWidget):
             my = max(1, round(self.param_b.value()))
             mz = max(1, min(4, round(frequency / 180.0)))
             slices = room_mode_slices(mx, my, mz, animation_time, frequency)
-            self._draw_room_mode(ax, slices, mx, my, mz)
+            self._draw_room_mode(ax, slices, mx, my, mz, is_new)
             self.param_hint.setText("参数 A：x 方向模态阶数；参数 B：y 方向模态阶数；z 方向阶数由频率估算。")
             self.summary_label.setText(
                 f"当前房间模态近似为 ({mx}, {my}, {mz})，相对本征频率约 {slices['relative_frequency']:.2f}。"
                 "图中同时显示水平截面、纵向截面和横向截面，可观察三维空间中的节点面和声压热点。"
             )
 
-        fig.patch.set_facecolor(CHART_BG)
+        if is_new:
+            fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
 
     def _style_surface_axes(self, ax, title: str) -> None:
@@ -164,7 +180,7 @@ class Sound3DPage(QWidget):
         ax.view_init(elev=28, azim=-55)
         ax.set_facecolor(CHART_BG)
 
-    def _draw_room_mode(self, ax, slices: dict, mx: int, my: int, mz: int) -> None:
+    def _draw_room_mode(self, ax, slices: dict, mx: int, my: int, mz: int, is_new: bool) -> None:
         cmap = plt.get_cmap("RdBu_r")
         norm = plt.Normalize(-1, 1)
 
@@ -175,20 +191,24 @@ class Sound3DPage(QWidget):
             ax.plot_surface(sx, sy, sz, facecolors=colors, rstride=1, cstride=1, linewidth=0, shade=False, antialiased=False)
 
         self._draw_room_box(ax)
-        sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-        sm.set_array([])
-        ax.figure.colorbar(sm, ax=ax, shrink=0.65, pad=0.08, label="声压")
+        
+        if is_new:
+            sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+            sm.set_array([])
+            ax.figure.colorbar(sm, ax=ax, shrink=0.65, pad=0.08, label="声压")
 
+            ax.set_xlabel("x / L", color=CHART_FG_MUTED)
+            ax.set_ylabel("y / W", color=CHART_FG_MUTED)
+            ax.set_zlabel("z / H", color=CHART_FG_MUTED)
+            ax.set_xlim(0, 1)
+            ax.set_ylim(0, 1)
+            ax.set_zlim(0, 1)
+            ax.set_box_aspect((1.25, 1.0, 0.75))
+            ax.view_init(elev=24, azim=-42)
+            ax.set_facecolor(CHART_BG)
+        
+        # 始终更新标题（因为mx, my, mz即使在同一模式下也可能变化）
         ax.set_title(f"矩形房间驻波模态：({mx}, {my}, {mz})", color=CHART_FG)
-        ax.set_xlabel("x / L", color=CHART_FG_MUTED)
-        ax.set_ylabel("y / W", color=CHART_FG_MUTED)
-        ax.set_zlabel("z / H", color=CHART_FG_MUTED)
-        ax.set_xlim(0, 1)
-        ax.set_ylim(0, 1)
-        ax.set_zlim(0, 1)
-        ax.set_box_aspect((1.25, 1.0, 0.75))
-        ax.view_init(elev=24, azim=-42)
-        ax.set_facecolor(CHART_BG)
 
     def _draw_room_box(self, ax) -> None:
         corners = np.array([
@@ -216,6 +236,7 @@ class Sound3DPage(QWidget):
 
     def reset_animation(self) -> None:
         self.phase_value = 0.0
+        self.last_mode = None  # 强制作为新图重新绘制，以重置视角
         self.refresh_plot()
 
     def apply_preset(self, preset: dict) -> None:
@@ -229,6 +250,7 @@ class Sound3DPage(QWidget):
         self.param_a.setValue(float(preset.get("param_a", self.param_a.value())))
         self.param_b.setValue(float(preset.get("param_b", self.param_b.value())))
         self.phase_value = 0.0
+        self.last_mode = None  # 重置预设时也恢复默认视角
         self.refresh_plot()
 
     def export_figure(self) -> None:
