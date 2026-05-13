@@ -74,10 +74,12 @@ class AdvancedAcousticsPage(QWidget):
         self.param_b.setValue(0.00)
         self.param_b.valueChanged.connect(self.refresh_plot)
 
+        self.label_a = QLabel("参数 A")
+        self.label_b = QLabel("参数 B")
         form.addRow("实验类型", self.experiment_box)
         form.addRow("频率 / Hz", self.freq_spin)
-        form.addRow("参数 A", self.param_a)
-        form.addRow("参数 B", self.param_b)
+        form.addRow(self.label_a, self.param_a)
+        form.addRow(self.label_b, self.param_b)
         control_layout.addLayout(form)
 
         button_row = QHBoxLayout()
@@ -131,12 +133,24 @@ class AdvancedAcousticsPage(QWidget):
         fig.clear()
         experiment = self.experiment_box.currentText()
         if experiment == "双声源干涉":
+            self.label_a.setText("声源间距(A) / m")
+            self.label_b.setText("初始相位差(B)")
+            self.param_b.setEnabled(True)
             self._plot_interference(fig)
         elif experiment == "单缝声衍射":
+            self.label_a.setText("缝隙宽度(A) / m")
+            self.label_b.setText("探测屏距(B) / m")
+            self.param_b.setEnabled(True)
             self._plot_diffraction(fig)
         elif experiment == "一维声子晶体带隙":
+            self.label_a.setText("质量比(A)")
+            self.label_b.setText("刚度比(B)")
+            self.param_b.setEnabled(True)
             self._plot_bandgap(fig)
         else:
+            self.label_a.setText("阻尼系数(A)")
+            self.label_b.setText("参数 B (不使用)")
+            self.param_b.setEnabled(False)
             self._plot_helmholtz(fig)
         fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
