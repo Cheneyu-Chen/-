@@ -21,7 +21,8 @@ def interference_field(
         rr = np.maximum(rr, 0.04)
         pressure += np.exp(1j * (k * rr + phase)) / np.sqrt(rr)
     intensity = np.abs(pressure) ** 2
-    intensity /= max(float(np.max(intensity)), 1e-9)
+    intensity /= max(float(np.percentile(intensity, 98)), 1e-9)
+    intensity = np.clip(intensity, 0, 1)
     return xx, yy, intensity
 
 
