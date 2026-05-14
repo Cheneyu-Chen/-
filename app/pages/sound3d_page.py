@@ -60,10 +60,12 @@ class Sound3DPage(QWidget):
         self.param_b.setValue(0.0)
         self.param_b.valueChanged.connect(self.refresh_plot)
 
+        self.label_a = QLabel("参数 A")
+        self.label_b = QLabel("参数 B")
         form.addRow("实验类型", self.mode_box)
         form.addRow("频率 / Hz", self.freq_spin)
-        form.addRow("参数 A", self.param_a)
-        form.addRow("参数 B", self.param_b)
+        form.addRow(self.label_a, self.param_a)
+        form.addRow(self.label_b, self.param_b)
         control_layout.addLayout(form)
 
         button_row = QHBoxLayout()
@@ -120,6 +122,22 @@ class Sound3DPage(QWidget):
 
         is_new = getattr(self, 'last_mode', None) != mode
         self.last_mode = mode
+
+        if mode == "点声源球面波":
+            self.label_a.setText("参数 A (不使用)")
+            self.label_b.setText("参数 B (不使用)")
+            self.param_a.setEnabled(False)
+            self.param_b.setEnabled(False)
+        elif mode == "双声源三维干涉":
+            self.label_a.setText("声源间距(A) / m")
+            self.label_b.setText("相位差(B) / rad")
+            self.param_a.setEnabled(True)
+            self.param_b.setEnabled(True)
+        else:
+            self.label_a.setText("X向阶数(A)")
+            self.label_b.setText("Y向阶数(B)")
+            self.param_a.setEnabled(True)
+            self.param_b.setEnabled(True)
 
         if is_new or not fig.axes:
             fig.clear()
