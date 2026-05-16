@@ -11,11 +11,20 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
+    QPlainTextEdit,
     QPushButton,
+    QSpinBox,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
+from app.core.enhancements import (
+    finite_difference_plate_mode,
+    parse_polygon_vertices,
+    polygon_to_text,
+    regular_polygon_vertices,
+)
 from app.core.modes import circular_mode, rectangular_mode, triangular_mode
 from app.theme import CHART_BG, CHART_CONTOUR, CHART_FG, CHART_FG_MUTED, CHART_SPINE, CHART_TICK
 from app.widgets.common import formula_label, make_card, muted_label
@@ -26,10 +35,22 @@ class ModesPage(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.time_value = 0.0
+        self.last_polygon_summary = ""
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.on_tick)
 
-        root = QHBoxLayout(self)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(12)
+
+        tabs = QTabWidget()
+        tabs.addTab(self._build_mode_tab(), "二维模态")
+        tabs.addTab(self._build_polygon_tab(), "多边形薄板")
+        root.addWidget(tabs, 1)
+
+    def _build_mode_tab(self) -> QWidget:
+        page = QWidget()
+        root = QHBoxLayout(page)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
@@ -102,6 +123,55 @@ class ModesPage(QWidget):
         right_container.setLayout(right)
         root.addWidget(right_container, 1)
         self.refresh_plot()
+        return page
+
+    def _build_polygon_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QHBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        controls, control_layout = make_card("自定义多边形边界")
+        self.vertex_editor = QPlainTextEdit()
+        self.vertex_editor.setPlainText(polygon_to_text(regular_polygon_vertices(6)))
+        self.vertex_editor.setMinimumHeight(130)
+        self.poly_mode = QSpinBox()
+        self.poly_mode.setRange(1, 8)
+        self.poly_mode.setValue(2)
+        self.poly_resolution = QSpinBox()
+        self.poly_resolution.setRange(24, 56)
+        self.poly_resolution.setValue(38)
+
+        form = QFormLayout()
+        form.addRow("模态序号", self.poly_mode)
+        form.addRow("网格分辨率", self.poly_resolution)
+        control_layout.addLayout(form)
+        control_layout.addWidget(QLabel("顶点坐标 x,y："))
+        control_layout.addWidget(self.vertex_editor)
+
+        preset_row = QHBoxLayout()
+        for name, sides in [("三角形", 3), ("五边形", 5), ("六边形", 6)]:
+            btn = QPushButton(name)
+            btn.clicked.connect(lambda checked=False, s=sides: self.set_polygon_preset(s))
+            preset_row.addWidget(btn)
+        control_layout.addLayout(preset_row)
+
+        solve_btn = QPushButton("有限差分求解")
+        solve_btn.clicked.connect(self.solve_polygon_mode)
+        control_layout.addWidget(solve_btn)
+        control_layout.addWidget(muted_label("求解使用网格拉普拉斯算子的平方近似薄板双调和算子，适合教学演示任意边界对节点线的影响。"))
+        control_layout.addStretch(1)
+        layout.addWidget(controls, 0)
+
+        result, result_layout = make_card("有限差分薄板模态")
+        self.poly_canvas = MplCanvas(width=7.4, height=4.6, dpi=100)
+        self.poly_result = QLabel()
+        self.poly_result.setWordWrap(True)
+        result_layout.addWidget(self.poly_canvas)
+        result_layout.addWidget(self.poly_result)
+        layout.addWidget(result, 1)
+        self.solve_polygon_mode()
+        return page
 
     def _mode_data(self):
         primary = int(self.first_index.currentText() or "1")
@@ -198,3 +268,34 @@ class ModesPage(QWidget):
         path, _ = QFileDialog.getSaveFileName(self, "导出模态图像", str(outputs / "mode_map.png"), "PNG 图像 (*.png)")
         if path:
             self.canvas.figure.savefig(path, dpi=180, facecolor=self.canvas.figure.get_facecolor(), bbox_inches="tight")
+
+    def set_polygon_preset(self, sides: int) -> None:
+        self.vertex_editor.setPlainText(polygon_to_text(regular_polygon_vertices(sides)))
+        self.solve_polygon_mode()
+
+    def solve_polygon_mode(self) -> None:
+        try:
+            vertices = parse_polygon_vertices(self.vertex_editor.toPlainText())
+            result = finite_difference_plate_mode(vertices, self.poly_mode.value(), self.poly_resolution.value())
+        except Exception as exc:  # noqa: BLE001
+            self.poly_result.setText(f"求解失败：{exc}")
+            return
+
+        fig = self.poly_canvas.figure
+        fig.clear()
+        ax = fig.add_subplot(111)
+        im = ax.imshow(result.mode, extent=[0, 1, 0, 1], origin="lower", cmap="RdBu_r", vmin=-1, vmax=1)
+        ax.contour(result.x, result.y, np.ma.filled(result.mode, np.nan), levels=[0], colors=CHART_CONTOUR, linewidths=1.2)
+        ax.plot(*np.vstack([vertices, vertices[0]]).T, color="#111827", linewidth=1.4)
+        ax.set_title("自定义多边形有限差分模态", color=CHART_FG)
+        ax.set_aspect("equal")
+        ax.tick_params(colors=CHART_TICK)
+        fig.colorbar(im, ax=ax, shrink=0.84)
+        fig.patch.set_facecolor(CHART_BG)
+        self.poly_canvas.draw_idle()
+
+        self.last_polygon_summary = (
+            f"多边形顶点数 {len(vertices)}，内部网格点 {result.active_points}，"
+            f"第 {self.poly_mode.value()} 阶相对频率 {result.relative_frequency:.2f}。"
+        )
+        self.poly_result.setText(self.last_polygon_summary)

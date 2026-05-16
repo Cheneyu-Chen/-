@@ -98,8 +98,8 @@ class MainWindow(QMainWindow):
             ("进阶声学", 4),
             ("三维声波", 5),
             ("教学案例", 6),
-            ("实验对比", 7),
-            ("增强工具", 8),
+            ("增强工具", 7),
+            ("实验对比", 8),
         ]
         for name, index in nav_items:
             btn = QLabel(name)
@@ -137,8 +137,8 @@ class MainWindow(QMainWindow):
             self.advanced_page,
             self.sound3d_page,
             self.cases_page,
-            self.compare_page,
             self.enhancement_page,
+            self.compare_page,
         ]:
             self.stack.addWidget(page)
             polish_numeric_inputs(page)

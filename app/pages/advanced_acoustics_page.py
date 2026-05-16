@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSpinBox,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -21,6 +23,7 @@ from app.core.advanced_acoustics import (
     interference_field,
     phononic_chain_dispersion,
 )
+from app.core.enhancements import metamaterial_array_response
 from app.theme import (
     CHART_BG,
     CHART_FG,
@@ -44,7 +47,18 @@ class AdvancedAcousticsPage(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.on_tick)
 
-        root = QHBoxLayout(self)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(12)
+
+        tabs = QTabWidget()
+        tabs.addTab(self._build_experiment_tab(), "进阶声学实验")
+        tabs.addTab(self._build_metamaterial_tab(), "二维超材料")
+        root.addWidget(tabs, 1)
+
+    def _build_experiment_tab(self) -> QWidget:
+        page = QWidget()
+        root = QHBoxLayout(page)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
@@ -127,6 +141,71 @@ class AdvancedAcousticsPage(QWidget):
         right_container.setLayout(right)
         root.addWidget(right_container, 1)
         self.refresh_plot()
+        return page
+
+    def _build_metamaterial_tab(self) -> QWidget:
+        page = QWidget()
+        root = QHBoxLayout(page)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(12)
+
+        control_card, control_layout = make_card("二维声学超材料阵列")
+        form = QFormLayout()
+        form.setSpacing(10)
+
+        self.meta_rows = QSpinBox()
+        self.meta_rows.setRange(4, 16)
+        self.meta_rows.setValue(8)
+        self.meta_cols = QSpinBox()
+        self.meta_cols.setRange(4, 16)
+        self.meta_cols.setValue(8)
+        self.meta_resonance = QDoubleSpinBox()
+        self.meta_resonance.setRange(120.0, 1000.0)
+        self.meta_resonance.setValue(520.0)
+        self.meta_resonance.setSingleStep(20.0)
+        self.meta_coupling = QDoubleSpinBox()
+        self.meta_coupling.setRange(0.05, 0.90)
+        self.meta_coupling.setValue(0.36)
+        self.meta_coupling.setSingleStep(0.05)
+        self.meta_damping = QDoubleSpinBox()
+        self.meta_damping.setRange(0.02, 0.40)
+        self.meta_damping.setValue(0.08)
+        self.meta_damping.setSingleStep(0.02)
+        self.meta_observe = QDoubleSpinBox()
+        self.meta_observe.setRange(80.0, 1200.0)
+        self.meta_observe.setValue(520.0)
+        self.meta_observe.setSingleStep(20.0)
+
+        form.addRow("阵列行数", self.meta_rows)
+        form.addRow("阵列列数", self.meta_cols)
+        form.addRow("局域共振频率 / Hz", self.meta_resonance)
+        form.addRow("耦合强度", self.meta_coupling)
+        form.addRow("阻尼", self.meta_damping)
+        form.addRow("观察频率 / Hz", self.meta_observe)
+        control_layout.addLayout(form)
+
+        run_btn = QPushButton("计算阵列响应")
+        run_btn.clicked.connect(self.solve_metamaterial)
+        control_layout.addWidget(run_btn)
+        control_layout.addWidget(muted_label("该模型用局域共振与耦合衰减近似展示二维阵列的带隙、传输下降和空间声场衰减。"))
+        control_layout.addStretch(1)
+        root.addWidget(control_card, 0)
+
+        right = QVBoxLayout()
+        right.setSpacing(12)
+        result_card, result_layout = make_card("带隙与空间场")
+        self.meta_canvas = MplCanvas(width=7.4, height=4.6, dpi=100)
+        result_layout.addWidget(self.meta_canvas)
+        self.meta_result = QLabel()
+        self.meta_result.setWordWrap(True)
+        result_layout.addWidget(self.meta_result)
+        right.addWidget(result_card, 1)
+
+        right_container = QWidget()
+        right_container.setLayout(right)
+        root.addWidget(right_container, 1)
+        self.solve_metamaterial()
+        return page
 
     def refresh_plot(self) -> None:
         fig = self.canvas.figure
@@ -268,3 +347,37 @@ class AdvancedAcousticsPage(QWidget):
         path, _ = QFileDialog.getSaveFileName(self, "导出进阶声学图像", str(outputs / "advanced_acoustics.png"), "PNG 图像 (*.png)")
         if path:
             self.canvas.figure.savefig(path, dpi=180, facecolor=self.canvas.figure.get_facecolor(), bbox_inches="tight")
+
+    def solve_metamaterial(self) -> None:
+        result = metamaterial_array_response(
+            self.meta_rows.value(),
+            self.meta_cols.value(),
+            self.meta_resonance.value(),
+            self.meta_coupling.value(),
+            self.meta_damping.value(),
+            self.meta_observe.value(),
+        )
+        fig = self.meta_canvas.figure
+        fig.clear()
+        ax1, ax2 = fig.subplots(1, 2)
+        ax1.plot(result.frequencies, result.transmission_db, color="#0f766e", linewidth=2)
+        ax1.axvspan(result.bandgap_start, result.bandgap_end, color="#f59e0b", alpha=0.24)
+        ax1.set_title("传输谱与带隙", color=CHART_FG)
+        ax1.set_xlabel("频率 / Hz", color=CHART_FG_MUTED)
+        ax1.set_ylabel("传输 / dB", color=CHART_FG_MUTED)
+        ax1.grid(True, color=CHART_GRID)
+        ax1.tick_params(colors=CHART_TICK)
+
+        im = ax2.imshow(result.field, cmap="RdBu_r", vmin=-1, vmax=1, origin="lower")
+        ax2.set_title("阵列声场快照", color=CHART_FG)
+        ax2.set_xlabel("列", color=CHART_FG_MUTED)
+        ax2.set_ylabel("行", color=CHART_FG_MUTED)
+        fig.colorbar(im, ax=ax2, shrink=0.78)
+        fig.patch.set_facecolor(CHART_BG)
+        self.meta_canvas.draw_idle()
+
+        self.meta_result.setText(
+            f"二维阵列 {self.meta_rows.value()}x{self.meta_cols.value()}，"
+            f"预测带隙约 {result.bandgap_start:.0f}-{result.bandgap_end:.0f} Hz，"
+            f"最低传输 {result.min_transmission:.1f} dB。"
+        )
