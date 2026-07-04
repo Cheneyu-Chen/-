@@ -146,12 +146,18 @@ class EnhancementPage(QWidget):
             self.photo_primary.value(),
             self.photo_secondary.value(),
         )
-        display_score, display_correlation, display_overlap = self._build_demo_metrics(
-            result.reference,
-            self.photo_template.currentText(),
-            self.photo_primary.value(),
-            self.photo_secondary.value(),
-        )
+        template_name = self.photo_template.currentText()
+        if template_name == "一维驻波":
+            display_score, display_correlation, display_overlap = self._build_demo_metrics(
+                result.reference,
+                template_name,
+                self.photo_primary.value(),
+                self.photo_secondary.value(),
+            )
+        else:
+            display_score = round(result.score * 100.0, 1)
+            display_correlation = round(result.correlation, 3)
+            display_overlap = round(result.structure_overlap, 3)
         self.last_display_score = display_score
         self.last_similarity = {
             "score": result.score,
