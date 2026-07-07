@@ -377,16 +377,31 @@ class AdvancedAcousticsPage(QWidget):
         leg = ax.legend(loc="best")
         for text in leg.get_texts():
             text.set_color(CHART_FG)
+        observe_frequency = self.freq_spin.value()
+        acoustic_top = float(np.max(acoustic))
+        optical_bottom = float(np.min(optical))
+        in_gap = acoustic_top < observe_frequency < optical_bottom
         self.param_hint.setText("参数 A：质量比 m₂/m₁；参数 B：刚度比 k₂/k₁。")
-        self.summary_label.setText(f"归一化带隙宽度约 {gap:.3f}。绿色游标模拟波矢扫描，带隙区间内没有传播模态。")
+        if in_gap:
+            gap_hint = "当前观察频率落在禁带区，传播会明显衰减。"
+        else:
+            gap_hint = "当前观察频率位于可传播区，声波更容易在结构中传递。"
+        self.summary_label.setText(
+            f"归一化带隙宽度约 {gap:.3f}。绿色游标模拟波矢扫描，带隙区间内没有传播模态。"
+            f" {gap_hint}"
+        )
 
     def _plot_helmholtz(self, fig) -> None:
         resonant_frequency = self.freq_spin.value()
         damping = max(self.param_a.value(), 0.01)
-        freqs, absorption, bandwidth = helmholtz_absorber_response(resonant_frequency, damping)
+        freqs, absorption, bandwidth, f1, f2 = helmholtz_absorber_response(resonant_frequency, damping)
         ax = fig.add_subplot(111)
         ax.plot(freqs, absorption, color=CHART_LINE_PRIMARY, linewidth=2.2)
         ax.axvline(resonant_frequency, color=CHART_LINE_RED, linestyle="--", linewidth=1.6, label="共鸣频率")
+        ax.axhline(0.5, color=CHART_LINE_AMBER, linestyle="--", linewidth=1.3, label="半吸收阈值 α=0.5")
+        if f2 > f1:
+            ax.axvspan(f1, f2, color=CHART_LINE_AMBER, alpha=0.20, label="有效吸收带宽")
+            ax.text((f1 + f2) / 2, 0.56, f"Δf={bandwidth:.1f} Hz", color=CHART_FG, ha="center", va="bottom")
         cursor = freqs[int((self.time_value * 40) % len(freqs))]
         ax.axvline(cursor, color=CHART_LINE_GREEN, linestyle=":", linewidth=1.8, label="扫频游标")
         ax.set_title("亥姆霍兹共鸣吸声响应", color=CHART_FG)
@@ -398,7 +413,10 @@ class AdvancedAcousticsPage(QWidget):
         for text in leg.get_texts():
             text.set_color(CHART_FG)
         self.param_hint.setText("频率：共鸣频率 f₀ / Hz；参数 A：阻尼系数 ζ；参数 B 不使用。")
-        self.summary_label.setText(f"半吸收带宽约 {bandwidth:.1f} Hz。绿色游标模拟扫频实验，接近 f₀ 时吸声最强。")
+        self.summary_label.setText(
+            f"半吸收带宽约 {bandwidth:.1f} Hz（f₁={f1:.1f} Hz, f₂={f2:.1f} Hz）。"
+            "绿色游标模拟扫频实验，接近 f₀ 时吸声最强；阻尼增大通常会拓宽带宽但降低峰值尖锐度。"
+        )
 
     def on_tick(self) -> None:
         self.time_value += 0.04
@@ -466,4 +484,6 @@ class AdvancedAcousticsPage(QWidget):
             f"二维阵列 {self.meta_rows.value()}x{self.meta_cols.value()}，"
             f"预测带隙约 {result.bandgap_start:.0f}-{result.bandgap_end:.0f} Hz，"
             f"最低传输 {result.min_transmission:.1f} dB。"
+            f"当前观察频率 {self.meta_observe.value():.0f} Hz"
+            f"{'位于禁带区，阵列阻隔更明显' if result.bandgap_start <= self.meta_observe.value() <= result.bandgap_end else '位于通带区，波动可较好传播'}。"
         )

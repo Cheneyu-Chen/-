@@ -105,4 +105,6 @@ def helmholtz_absorber_response(
     absorption = np.clip(absorption, 0.0, 1.0)
     half_power = freqs[absorption >= 0.5]
     bandwidth = float(half_power[-1] - half_power[0]) if len(half_power) > 1 else 0.0
-    return freqs, absorption, bandwidth
+    f1 = float(half_power[0]) if len(half_power) > 0 else resonant_frequency
+    f2 = float(half_power[-1]) if len(half_power) > 0 else resonant_frequency
+    return freqs, absorption, bandwidth, f1, f2
