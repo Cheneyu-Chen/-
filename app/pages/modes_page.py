@@ -33,6 +33,14 @@ from app.widgets.mpl_canvas import MplCanvas
 
 
 class ModesPage(QWidget):
+    POLYGON_SCENARIOS = {
+        "异形薄板振动": "用于解释非规则边界如何改变节点线布局，常见于异形机械构件与定制化振动板。",
+        "乐器共鸣板": "用于分析边界轮廓对共鸣模式和辐射效率的影响，可对应吉他/提琴等共鸣板设计。",
+        "扬声器振膜": "用于展示振膜边界和支撑结构变化对分瓣振动和失真风险的影响。",
+        "MEMS 谐振器": "用于说明微结构边界约束变化会如何移动本征频率并改变模态可读性。",
+        "建筑声学构件": "用于评估异形吸声板或隔声构件在特定频段的振动响应差异。",
+    }
+
     def __init__(self) -> None:
         super().__init__()
         self.time_value = 0.0
@@ -159,15 +167,24 @@ class ModesPage(QWidget):
         self.poly_resolution.setRange(24, 56)
         self.poly_resolution.setValue(38)
 
+        self.poly_scenario = QComboBox()
+        self.poly_scenario.addItems(list(self.POLYGON_SCENARIOS.keys()))
+        self.poly_scenario.currentIndexChanged.connect(self.solve_polygon_mode)
+
+        self.poly_physics_hint = QLabel()
+        self.poly_physics_hint.setWordWrap(True)
+
         form = QFormLayout()
         form.addRow("模态序号", self.poly_mode)
         form.addRow("网格分辨率", self.poly_resolution)
+        form.addRow("应用场景", self.poly_scenario)
         control_layout.addLayout(form)
         control_layout.addWidget(QLabel("顶点坐标 x,y："))
         control_layout.addWidget(self.vertex_editor)
+        control_layout.addWidget(self.poly_physics_hint)
 
         preset_row = QHBoxLayout()
-        for name, sides in [("三角形", 3), ("五边形", 5), ("六边形", 6)]:
+        for name, sides in [("异形膜片示例", 3), ("传感器振膜示例", 5), ("共鸣板示例", 6)]:
             btn = QPushButton(name)
             btn.clicked.connect(lambda checked=False, s=sides: self.set_polygon_preset(s))
             preset_row.addWidget(btn)
@@ -342,4 +359,11 @@ class ModesPage(QWidget):
             f"多边形顶点数 {len(vertices)}，内部网格点 {result.active_points}，"
             f"第 {self.poly_mode.value()} 阶相对频率 {result.relative_frequency:.2f}。"
         )
-        self.poly_result.setText(self.last_polygon_summary)
+        scenario = self.poly_scenario.currentText()
+        scenario_desc = self.POLYGON_SCENARIOS.get(scenario, "")
+        self.poly_physics_hint.setText(f"场景说明：{scenario_desc}")
+        self.poly_result.setText(
+            f"{self.last_polygon_summary}"
+            f"物理含义：边界几何会重排节点线，进而改变振动热点分布和共振响应。"
+            f"可用于解释问题：{scenario}下为何局部区域更易出现振幅放大或抑制。"
+        )
