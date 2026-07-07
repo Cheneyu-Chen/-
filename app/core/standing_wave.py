@@ -26,6 +26,39 @@ class StandingWaveModel:
     def wave_speed(self) -> float:
         return 2.0 * self.length * self.base_frequency
 
+    def estimate_plot_range(
+        self,
+        x: np.ndarray,
+        drive_frequency: float,
+        mode: int,
+        damping: float,
+        amplitude: float,
+        excitation_position: float,
+        boundary: str = "fixed-fixed",
+    ) -> tuple[float, float]:
+        mode = max(1, int(mode))
+        natural_frequency = self.natural_frequency(mode, boundary)
+        horizon = max(2.0, 2.5 / max(drive_frequency, 1e-6), 2.5 / max(natural_frequency, 1e-6))
+        sample_times = np.linspace(0.0, horizon, 24)
+        peak = 0.0
+
+        for sample_time in sample_times:
+            y, _, _ = self.simulate(
+                x,
+                float(sample_time),
+                drive_frequency,
+                mode,
+                damping,
+                amplitude,
+                excitation_position,
+                boundary,
+            )
+            peak = max(peak, float(np.max(np.abs(y))))
+
+        limit = max(0.12, peak * 1.35)
+        step = max(0.05, round(limit / 4.0 / 0.05) * 0.05)
+        return limit, step
+
     def simulate(
         self,
         x: np.ndarray,

@@ -90,18 +90,21 @@ class StandingWavePage(QWidget):
         buttons.setContentsMargins(0, 0, 0, 0)
         play_btn = QPushButton("播放")
         pause_btn = QPushButton("暂停")
-        reset_btn = QPushButton("重置")
+        reset_defaults_btn = QPushButton("重置初始状态")
+        reset_time_btn = QPushButton("回到激励瞬间")
         export_btn = QPushButton("导出图像")
-        for btn in (play_btn, pause_btn, reset_btn, export_btn):
+        for btn in (play_btn, pause_btn, reset_defaults_btn, reset_time_btn, export_btn):
             btn.setFixedHeight(44)
         play_btn.clicked.connect(self.start_animation)
         pause_btn.clicked.connect(self.stop_animation)
-        reset_btn.clicked.connect(self.reset_defaults)
+        reset_defaults_btn.clicked.connect(self.reset_defaults)
+        reset_time_btn.clicked.connect(self.reset_to_initial_moment)
         export_btn.clicked.connect(self.export_figure)
         buttons.addWidget(play_btn)
         buttons.addWidget(pause_btn)
         control_layout.addLayout(buttons)
-        control_layout.addWidget(reset_btn)
+        control_layout.addWidget(reset_defaults_btn)
+        control_layout.addWidget(reset_time_btn)
         control_layout.addWidget(export_btn)
 
         tips_card, tips_layout = make_card("理论对应")
@@ -158,8 +161,16 @@ class StandingWavePage(QWidget):
         mapping = {0: "fixed-fixed", 1: "fixed-free", 2: "free-free"}
         return mapping[self.boundary_box.currentIndex()]
 
-    def y_axis_settings(self, info: dict) -> tuple[float, float]:
-        return 1.5, 0.5
+    def y_axis_settings(self) -> tuple[float, float]:
+        return self.model.estimate_plot_range(
+            self.x,
+            self.freq_spin.value(),
+            self.current_mode(),
+            self.damping_spin.value(),
+            self.amp_spin.value(),
+            self.excitation_spin.value(),
+            self.current_boundary(),
+        )
 
     def refresh_plot(self) -> None:
         y, envelope, info = self.model.simulate(
@@ -172,7 +183,7 @@ class StandingWavePage(QWidget):
             self.excitation_spin.value(),
             self.current_boundary(),
         )
-        y_limit, y_step = self.y_axis_settings(info)
+        y_limit, y_step = self.y_axis_settings()
         fig = self.canvas.figure
         fig.clear()
         ax = fig.add_subplot(111)
@@ -224,12 +235,18 @@ class StandingWavePage(QWidget):
         self.timer.stop()
 
     def reset_defaults(self) -> None:
+        self.stop_animation()
         self.mode_box.setCurrentIndex(0)
         self.boundary_box.setCurrentIndex(0)
         self.freq_spin.setValue(1.0)
         self.amp_spin.setValue(0.6)
         self.damping_spin.setValue(0.12)
         self.excitation_spin.setValue(0.50)
+        self.time_value = 0.0
+        self.refresh_plot()
+
+    def reset_to_initial_moment(self) -> None:
+        self.stop_animation()
         self.time_value = 0.0
         self.refresh_plot()
 
