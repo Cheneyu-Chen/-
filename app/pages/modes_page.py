@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
     QPushButton,
+    QDoubleSpinBox,
     QSpinBox,
     QTabWidget,
     QVBoxLayout,
@@ -75,10 +76,26 @@ class ModesPage(QWidget):
         self.application_box.addItems(["教学演示", "克拉尼图形", "乐器共鸣箱", "MEMS 谐振器"])
         self.application_box.currentIndexChanged.connect(self.refresh_plot)
 
+        self.excitation_x = QDoubleSpinBox()
+        self.excitation_x.setRange(0.0, 1.0)
+        self.excitation_x.setSingleStep(0.05)
+        self.excitation_x.setDecimals(2)
+        self.excitation_x.setValue(0.35)
+        self.excitation_x.valueChanged.connect(self.refresh_plot)
+
+        self.excitation_y = QDoubleSpinBox()
+        self.excitation_y.setRange(0.0, 1.0)
+        self.excitation_y.setSingleStep(0.05)
+        self.excitation_y.setDecimals(2)
+        self.excitation_y.setValue(0.55)
+        self.excitation_y.valueChanged.connect(self.refresh_plot)
+
         form.addRow("几何形状", self.geometry_box)
         form.addRow("第一模态指标", self.first_index)
         form.addRow("第二模态指标", self.second_index)
         form.addRow("应用场景", self.application_box)
+        form.addRow("激励点 X", self.excitation_x)
+        form.addRow("激励点 Y", self.excitation_y)
         control_layout.addLayout(form)
 
         button_row = QHBoxLayout()
@@ -177,6 +194,8 @@ class ModesPage(QWidget):
         primary = int(self.first_index.currentText() or "1")
         secondary = int(self.second_index.currentText() or "1")
         geometry_name = self.geometry_box.currentText()
+        source_x = float(self.excitation_x.value())
+        source_y = float(self.excitation_y.value())
         if geometry_name.startswith("矩形"):
             xx, yy, zz, relative_freq = rectangular_mode(primary, secondary, resolution=180)
             title = f"矩形膜模态：m={primary}，n={secondary}"
@@ -184,6 +203,7 @@ class ModesPage(QWidget):
             model_text = "矩形边界近似满足四边固定，节点线由两个方向的正弦因子共同决定。"
             formula_lines = ["矩形膜：φₘₙ(x,y) = sin(mπx)·sin(nπy)"]
             patch = None
+            excitation_point = (source_x, source_y)
         elif geometry_name.startswith("圆形"):
             order = primary - 1
             radial = max(1, secondary)
@@ -193,6 +213,7 @@ class ModesPage(QWidget):
             model_text = "圆形膜振型由径向贝塞尔函数和角向余弦项共同决定。"
             formula_lines = ["圆形膜：φₘ(r,θ) = Jₘ(kr)·cos(mθ)"]
             patch = patches.Circle((0, 0), 1, fill=False, edgecolor=CHART_SPINE, linewidth=1.2)
+            excitation_point = (source_x * 2 - 1, source_y * 2 - 1)
         else:
             xx, yy, zz, relative_freq = triangular_mode(primary, secondary, resolution=200)
             title = f"三角形膜近似模态：m={primary}，n={secondary}"
@@ -200,18 +221,39 @@ class ModesPage(QWidget):
             model_text = "三角边界会打破矩形对称性，节点线更容易形成斜向图案。"
             formula_lines = ["三角形膜：φ ≈ sin(mπx)·sin(nπy)·sin((m+n)π(1-x-y))"]
             patch = patches.Polygon([[0, 0], [1, 0], [0, 1]], fill=False, edgecolor=CHART_SPINE, linewidth=1.2)
-        return xx, yy, zz, relative_freq, title, extent, model_text, formula_lines, patch
+            excitation_point = (source_x, source_y)
+        return xx, yy, zz, relative_freq, title, extent, model_text, formula_lines, patch, excitation_point
+
+    def _build_up_factor(self) -> float:
+        return float(1.0 - np.exp(-2.8 * self.time_value))
+
+    def _excitation_field(self, xx, yy, excitation_point, extent, mask=None):
+        x0, y0 = excitation_point
+        span_x = max(extent[1] - extent[0], 1e-6)
+        span_y = max(extent[3] - extent[2], 1e-6)
+        sigma = 0.14 * min(span_x, span_y)
+        wavefront_speed = 1.35 * min(span_x, span_y)
+        distance = np.sqrt((xx - x0) ** 2 + (yy - y0) ** 2)
+        envelope = np.exp(-((distance - wavefront_speed * self.time_value) ** 2) / max(2 * sigma**2, 1e-6))
+        local_wave = envelope * np.cos(8.0 * distance - 2 * np.pi * 1.1 * self.time_value)
+        if mask is not None:
+            local_wave = np.ma.array(local_wave, mask=mask)
+        return local_wave
 
     def refresh_plot(self) -> None:
-        xx, yy, zz, relative_freq, title, extent, model_text, formula_lines, patch = self._mode_data()
+        xx, yy, zz, relative_freq, title, extent, model_text, formula_lines, patch, excitation_point = self._mode_data()
         temporal = np.cos(2 * np.pi * 0.7 * self.time_value)
-        dynamic_zz = zz * temporal
+        build_up = self._build_up_factor()
+        mask = getattr(zz, "mask", None)
+        source_field = self._excitation_field(xx, yy, excitation_point, extent, mask=mask)
+        dynamic_zz = (1.0 - build_up) * source_field + build_up * zz * temporal
 
         fig = self.canvas.figure
         fig.clear()
         ax = fig.add_subplot(111)
         im = ax.imshow(dynamic_zz, extent=extent, origin="lower", cmap="RdBu_r", vmin=-1, vmax=1)
         ax.contour(xx, yy, np.ma.filled(zz, np.nan), levels=[0], colors=CHART_CONTOUR, linewidths=1.2)
+        ax.scatter([excitation_point[0]], [excitation_point[1]], s=64, color="#f59e0b", edgecolors="#111827", linewidths=0.8, zorder=5)
         if patch is not None:
             ax.add_patch(patch)
         cbar = fig.colorbar(im, ax=ax, shrink=0.85)
@@ -230,6 +272,8 @@ class ModesPage(QWidget):
         self.formula_display.setText("\n".join(formula_lines))
         self.summary_label.setText(
             f"{model_text} 当前相对本征频率约为 {relative_freq:.2f}。"
+            f"激励点位于 ({excitation_point[0]:.2f}, {excitation_point[1]:.2f})，"
+            f"建立程度约为 {build_up:.2f}。"
             f"瞬时相位系数为 {temporal:+.2f}，节点线位置不随时间移动。"
         )
 
