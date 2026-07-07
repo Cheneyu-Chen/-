@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(14, 20, 14, 20)
         layout.setSpacing(6)
 
-        logo_label = QLabel("声场与振动\n可视化仿真平台")
+        logo_label = QLabel("声波与振动\n可视化仿真平台")
         logo_label.setObjectName("TitleLabel")
         logo_label.setAlignment(Qt.AlignCenter)
         logo_label.setWordWrap(True)
@@ -94,9 +94,9 @@ class MainWindow(QMainWindow):
             ("平台总览", 0),
             ("一维驻波", 1),
             ("二维模态", 2),
-            ("共振扫描", 3),
-            ("进阶声学", 4),
-            ("三维声波", 5),
+            ("三维声波", 3),
+            ("共振扫描", 4),
+            ("进阶声学", 5),
             ("教学案例", 6),
             ("增强工具", 7),
             ("实验对比", 8),
@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
 
-        footer = QLabel("声学仿真平台")
+        footer = QLabel("声波实验仿真平台")
         footer.setObjectName("FooterLabel")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
@@ -133,9 +133,9 @@ class MainWindow(QMainWindow):
             self.home_page,
             self.standing_wave_page,
             self.modes_page,
+            self.sound3d_page,
             self.resonance_page,
             self.advanced_page,
-            self.sound3d_page,
             self.cases_page,
             self.enhancement_page,
             self.compare_page,
@@ -179,15 +179,15 @@ class MainWindow(QMainWindow):
             self.modes_page.apply_preset(preset)
             self.stack.setCurrentIndex(2)
             self._set_active_nav(2)
-        elif target == "resonance":
-            self.resonance_page.apply_preset(preset)
-            self.stack.setCurrentIndex(3)
-            self._set_active_nav(3)
-        elif target == "advanced":
-            self.advanced_page.apply_preset(preset)
-            self.stack.setCurrentIndex(4)
-            self._set_active_nav(4)
         elif target == "sound3d":
             self.sound3d_page.apply_preset(preset)
+            self.stack.setCurrentIndex(3)
+            self._set_active_nav(3)
+        elif target == "resonance":
+            self.resonance_page.apply_preset(preset)
+            self.stack.setCurrentIndex(4)
+            self._set_active_nav(4)
+        elif target == "advanced":
+            self.advanced_page.apply_preset(preset)
             self.stack.setCurrentIndex(5)
             self._set_active_nav(5)

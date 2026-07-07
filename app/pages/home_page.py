@@ -13,11 +13,11 @@ class HomePage(QWidget):
         layout.setSpacing(12)
 
         hero, hero_layout = make_card()
-        title = QLabel("声场与振动可视化虚拟仿真平台")
+        title = QLabel("声波与振动可视化虚拟仿真平台")
         title.setObjectName("TitleLabel")
         subtitle = QLabel(
-            "平台以机械波和声学实验为核心，构建从一维驻波、二维模态到三维声波、"
-            "声学超材料带隙与局域共振吸声的可视化教学仿真系统。"
+            "平台以声波激励与结构振动响应为主线，构建从一维驻波、二维模态到三维声场的"
+            "维度递进实验体系，并扩展到共振扫描、衍射干涉、带隙与吸声工程应用。"
         )
         subtitle.setObjectName("SubtitleLabel")
         subtitle.setWordWrap(True)
@@ -34,6 +34,10 @@ class HomePage(QWidget):
             make_metric("仿真方式", "可调参数 + 动态演示", "用动画、热图、三维曲面和一键案例把声学规律显性化。"),
         ))
         metrics_layout.addWidget(two_col_row(
+            make_metric("维度主线", "1D -> 2D -> 3D", "先看弦/空气柱驻波，再看膜板节点线，最后进入空间声场与房间模态。"),
+            make_metric("应用落点", "噪声控制与声学设计", "将扫频、带隙和吸声机制对应到消声器、室内声学与超材料设计。"),
+        ))
+        metrics_layout.addWidget(two_col_row(
             make_metric("内容覆盖", "三维声波与超材料", "包含球面波、三维干涉、房间模态、声子晶体带隙和亥姆霍兹吸声。"),
             make_metric("成果输出", "图像 + 数据 + 分析报告", "支持导出图像，内置实验对比、相似度分析和报告生成工具。"),
         ))
@@ -42,8 +46,9 @@ class HomePage(QWidget):
         modules, modules_layout = make_card("功能模块")
         modules_layout.addWidget(muted_label(
             "平台总览：说明平台定位、实验体系、功能模块和核心特点。\n"
-            "仿真实验：一维驻波、二维模态、共振扫描、进阶声学、三维声波。\n"
-            "教学案例：12 个一键跳转案例，覆盖基础、进阶、三维和应用声学。\n"
+            "维度递进实验：一维驻波、二维模态、三维声波。\n"
+            "机制深化实验：共振扫描、进阶声学（干涉/衍射/带隙/吸声）。\n"
+            "教学案例：12 个一键跳转案例，覆盖基础维度、参数关系与工程应用。\n"
             "实验对比：提供真实实验对照、误差分析和大学物理课程联系。\n"
             "增强工具：照片相似度、多边形有限差分、二维超材料阵列和自动报告生成。"
         ))
