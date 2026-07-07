@@ -43,6 +43,35 @@ def diffraction_field(
     return x, envelope, wavelength
 
 
+def diffraction_field_2d(
+    frequency: float,
+    slit_width: float,
+    screen_distance: float,
+    sound_speed: float = 343.0,
+    x_resolution: int = 240,
+    y_resolution: int = 160,
+):
+    x = np.linspace(-2.0, 2.0, x_resolution)
+    y_max = max(screen_distance, 0.2)
+    y = np.linspace(0.0, y_max, y_resolution)
+    xx, yy = np.meshgrid(x, y)
+
+    wavelength = sound_speed / max(frequency, 1e-6)
+    sin_theta = xx / np.maximum(np.sqrt(xx**2 + yy**2), 1e-6)
+    beta = np.pi * slit_width * sin_theta / max(wavelength, 1e-9)
+
+    envelope = np.ones_like(beta)
+    mask = np.abs(beta) > 1e-9
+    envelope[mask] = (np.sin(beta[mask]) / beta[mask]) ** 2
+
+    radius = np.sqrt(xx**2 + yy**2)
+    attenuation = 1.0 / np.sqrt(np.maximum(radius, 0.25))
+    intensity = envelope * attenuation
+    intensity /= max(float(np.percentile(intensity, 98)), 1e-9)
+    intensity = np.clip(intensity, 0.0, 1.0)
+    return xx, yy, intensity, wavelength
+
+
 def phononic_chain_dispersion(
     mass_ratio: float,
     stiffness_ratio: float,

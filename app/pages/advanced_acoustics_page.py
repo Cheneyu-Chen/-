@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from app.core.advanced_acoustics import (
     diffraction_field,
+    diffraction_field_2d,
     helmholtz_absorber_response,
     interference_field,
     phononic_chain_dispersion,
@@ -71,10 +72,20 @@ class AdvancedAcousticsPage(QWidget):
         self.experiment_box.currentIndexChanged.connect(self.refresh_plot)
 
         self.freq_spin = QDoubleSpinBox()
-        self.freq_spin.setRange(80.0, 5000.0)
+        self.freq_spin.setRange(120.0, 5000.0)
         self.freq_spin.setSingleStep(20.0)
         self.freq_spin.setValue(800.0)
         self.freq_spin.valueChanged.connect(self.refresh_plot)
+
+        self.medium_box = QComboBox()
+        self.medium_box.addItems(["空气", "水", "自定义"])
+        self.medium_box.currentIndexChanged.connect(self.refresh_plot)
+
+        self.speed_spin = QDoubleSpinBox()
+        self.speed_spin.setRange(100.0, 1800.0)
+        self.speed_spin.setSingleStep(5.0)
+        self.speed_spin.setValue(343.0)
+        self.speed_spin.valueChanged.connect(self.refresh_plot)
 
         self.param_a = QDoubleSpinBox()
         self.param_a.setRange(0.05, 10.0)
@@ -92,6 +103,8 @@ class AdvancedAcousticsPage(QWidget):
         self.label_b = QLabel("参数 B")
         form.addRow("实验类型", self.experiment_box)
         form.addRow("频率 / Hz", self.freq_spin)
+        form.addRow("介质", self.medium_box)
+        form.addRow("声速 c / (m/s)", self.speed_spin)
         form.addRow(self.label_a, self.param_a)
         form.addRow(self.label_b, self.param_b)
         control_layout.addLayout(form)
@@ -210,29 +223,53 @@ class AdvancedAcousticsPage(QWidget):
     def refresh_plot(self) -> None:
         fig = self.canvas.figure
         fig.clear()
+        medium_name = self.medium_box.currentText()
+        if medium_name == "空气":
+            self.speed_spin.blockSignals(True)
+            self.speed_spin.setValue(343.0)
+            self.speed_spin.blockSignals(False)
+            self.speed_spin.setEnabled(False)
+        elif medium_name == "水":
+            self.speed_spin.blockSignals(True)
+            self.speed_spin.setValue(1480.0)
+            self.speed_spin.blockSignals(False)
+            self.speed_spin.setEnabled(False)
+        else:
+            self.speed_spin.setEnabled(True)
+
         experiment = self.experiment_box.currentText()
         if experiment == "双声源干涉":
             self.label_a.setText("声源间距(A) / m")
             self.label_b.setText("初始相位差(B)")
             self.param_b.setEnabled(True)
+            self.param_a.setRange(0.05, 2.5)
+            self.param_b.setRange(0.0, 6.28)
             self._plot_interference(fig)
         elif experiment == "单缝声衍射":
             self.label_a.setText("缝隙宽度(A) / m")
             self.label_b.setText("探测屏距(B) / m")
             self.param_b.setEnabled(True)
+            self.param_a.setRange(0.02, 1.2)
+            self.param_b.setRange(0.2, 8.0)
             self._plot_diffraction(fig)
         elif experiment == "一维声子晶体带隙":
             self.label_a.setText("质量比(A)")
             self.label_b.setText("刚度比(B)")
             self.param_b.setEnabled(True)
+            self.param_a.setRange(0.05, 10.0)
+            self.param_b.setRange(0.05, 10.0)
             self._plot_bandgap(fig)
         else:
             self.label_a.setText("阻尼系数(A)")
             self.label_b.setText("参数 B (不使用)")
             self.param_b.setEnabled(False)
+            self.param_a.setRange(0.01, 1.0)
             self._plot_helmholtz(fig)
         fig.patch.set_facecolor(CHART_BG)
         self.canvas.draw_idle()
+
+    def _current_sound_speed(self) -> float:
+        return float(self.speed_spin.value())
 
     def _style_axis(self, ax) -> None:
         ax.set_facecolor(CHART_BG)
@@ -244,7 +281,8 @@ class AdvancedAcousticsPage(QWidget):
     def _plot_interference(self, fig) -> None:
         spacing = self.param_a.value()
         phase = self.param_b.value() + 2.0 * self.time_value
-        xx, yy, intensity = interference_field(self.freq_spin.value(), spacing, phase)
+        sound_speed = self._current_sound_speed()
+        xx, yy, intensity = interference_field(self.freq_spin.value(), spacing, phase, sound_speed=sound_speed)
         ax = fig.add_subplot(111)
         im = ax.imshow(intensity, extent=[xx.min(), xx.max(), yy.min(), yy.max()], origin="lower", cmap="viridis")
         ax.scatter([-spacing / 2, spacing / 2], [0, 0], color="white", edgecolor="black", s=60, zorder=5)
@@ -254,24 +292,72 @@ class AdvancedAcousticsPage(QWidget):
         self._style_axis(ax)
         fig.colorbar(im, ax=ax, shrink=0.86)
         self.param_hint.setText("参数 A：声源间距 d / m；参数 B：初始相位差 Δφ / rad。")
-        self.summary_label.setText(f"相位正在推进：等效相位差 Δφ={phase:.2f} rad。亮纹与暗纹会随相位变化发生移动。")
+        self.summary_label.setText(
+            f"介质声速 c={sound_speed:.1f} m/s。相位正在推进：等效相位差 Δφ={phase:.2f} rad。"
+            f"亮纹与暗纹会随相位变化发生移动。"
+        )
 
     def _plot_diffraction(self, fig) -> None:
         slit_width = self.param_a.value()
         screen_distance = max(self.param_b.value(), 0.2)
-        x, envelope, wavelength = diffraction_field(self.freq_spin.value(), slit_width, screen_distance)
-        ax = fig.add_subplot(111)
-        ax.plot(x, envelope, color=CHART_LINE_PRIMARY, linewidth=2.2)
-        ax.fill_between(x, envelope, color=CHART_LINE_PRIMARY, alpha=0.18)
-        scan_x = x[int((self.time_value * 60) % len(x))]
-        ax.axvline(scan_x, color=CHART_LINE_RED, linestyle="--", linewidth=1.8, label="扫描位置")
-        ax.scatter([scan_x], [envelope[int((self.time_value * 60) % len(x))]], color=CHART_LINE_RED, s=55, zorder=5)
-        ax.set_title("单缝声衍射强度包络", color=CHART_FG)
-        ax.set_xlabel("屏上横向位置 / m", color=CHART_FG_MUTED)
-        ax.set_ylabel("归一化强度", color=CHART_FG_MUTED)
-        self._style_axis(ax)
-        self.param_hint.setText("参数 A：缝宽 a / m；参数 B：屏距 L / m。")
-        self.summary_label.setText(f"波长 λ={wavelength:.3f} m。红色游标模拟探头沿屏幕扫描衍射强度。")
+        sound_speed = self._current_sound_speed()
+        x, envelope, wavelength = diffraction_field(
+            self.freq_spin.value(),
+            slit_width,
+            screen_distance,
+            sound_speed=sound_speed,
+        )
+        xx, yy, intensity, _ = diffraction_field_2d(
+            self.freq_spin.value(),
+            slit_width,
+            screen_distance,
+            sound_speed=sound_speed,
+        )
+
+        ax_field, ax_line = fig.subplots(1, 2)
+        im = ax_field.imshow(
+            intensity,
+            extent=[xx.min(), xx.max(), yy.min(), yy.max()],
+            origin="lower",
+            cmap="magma",
+            aspect="auto",
+        )
+        ax_field.plot([-slit_width / 2, slit_width / 2], [0, 0], color="white", linewidth=3.0)
+        ax_field.axhline(screen_distance, color=CHART_LINE_GREEN, linestyle="--", linewidth=1.5)
+        ax_field.set_title("狭缝后二维衍射场", color=CHART_FG)
+        ax_field.set_xlabel("横向位置 x / m", color=CHART_FG_MUTED)
+        ax_field.set_ylabel("传播距离 y / m", color=CHART_FG_MUTED)
+        self._style_axis(ax_field)
+        fig.colorbar(im, ax=ax_field, shrink=0.86)
+
+        ax_line.plot(x, envelope, color=CHART_LINE_PRIMARY, linewidth=2.2)
+        ax_line.fill_between(x, envelope, color=CHART_LINE_PRIMARY, alpha=0.18)
+        scan_index = int((self.time_value * 60) % len(x))
+        scan_x = x[scan_index]
+        ax_line.axvline(scan_x, color=CHART_LINE_RED, linestyle="--", linewidth=1.8, label="探头扫描")
+        ax_line.scatter([scan_x], [envelope[scan_index]], color=CHART_LINE_RED, s=55, zorder=5)
+        ax_line.set_title("探测屏强度分布", color=CHART_FG)
+        ax_line.set_xlabel("屏上横向位置 / m", color=CHART_FG_MUTED)
+        ax_line.set_ylabel("归一化强度", color=CHART_FG_MUTED)
+        self._style_axis(ax_line)
+
+        ratio = slit_width / max(wavelength, 1e-9)
+        fraunhofer_limit = slit_width**2 / max(wavelength, 1e-9)
+        if screen_distance >= 5.0 * fraunhofer_limit:
+            condition = "远场条件良好"
+        elif screen_distance >= 2.0 * fraunhofer_limit:
+            condition = "远场近似基本可用"
+        else:
+            condition = "更接近近场，建议增大屏距"
+        self.param_hint.setText(
+            "参数 A：缝宽 a / m；参数 B：屏距 L / m。"
+            f" 当前指标：λ={wavelength:.3f} m，a/λ={ratio:.2f}，L/(a²/λ)={screen_distance/max(fraunhofer_limit,1e-9):.2f}。"
+        )
+        self.summary_label.setText(
+            f"介质声速 c={sound_speed:.1f} m/s。{condition}。"
+            "左图显示狭缝后空间衍射场，右图显示同一条件下探测屏强度分布。"
+            "当 a 与 λ 同量级时，主瓣展宽与旁瓣变化最容易观察。"
+        )
 
     def _plot_bandgap(self, fig) -> None:
         mass_ratio = self.param_a.value()
