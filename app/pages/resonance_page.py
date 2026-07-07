@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
+    QComboBox,
     QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
@@ -26,6 +27,13 @@ from app.widgets.mpl_canvas import MplCanvas
 
 
 class ResonancePage(QWidget):
+    OBJECT_HINTS = {
+        "弦": "对应弦振动扫频实验，可用于寻找固定边界条件下的主模态频率。",
+        "空气柱": "对应Kundt管或管乐器空气柱共振，扫频可定位驻波形成最明显的频段。",
+        "薄板": "对应克拉尼实验中的薄板响应，峰值频率附近更容易形成稳定节点图样。",
+        "共鸣腔": "对应亥姆霍兹类腔体与结构耦合，扫频可识别目标吸声或放大频段。",
+    }
+
     def __init__(self) -> None:
         super().__init__()
         root = QHBoxLayout(self)
@@ -62,11 +70,16 @@ class ResonancePage(QWidget):
         self.points.setSingleStep(50)
         self.points.setValue(240)
 
+        self.object_box = QComboBox()
+        self.object_box.addItems(list(self.OBJECT_HINTS.keys()))
+        self.object_box.currentIndexChanged.connect(self.run_scan)
+
         form.addRow("起始频率 / Hz", self.start_freq)
         form.addRow("终止频率 / Hz", self.end_freq)
         form.addRow("本征频率 / Hz", self.natural_freq)
         form.addRow("阻尼比 ζ", self.damping)
         form.addRow("采样点数", self.points)
+        form.addRow("实验对象", self.object_box)
         control_layout.addLayout(form)
 
         buttons = QHBoxLayout()
@@ -88,6 +101,8 @@ class ResonancePage(QWidget):
         note_layout.addWidget(muted_label(
             "每一条公式单独成行显示。驱动频率接近本征频率时响应达到峰值；阻尼越小，峰越高且带宽越窄。"
         ))
+        self.object_hint_label = muted_label("")
+        note_layout.addWidget(self.object_hint_label)
         control_layout.addWidget(note_card)
         control_layout.addStretch(1)
         root.addWidget(control_card, 0)
@@ -159,10 +174,14 @@ class ResonancePage(QWidget):
         else:
             peak_info = "扫描区间内未识别到显著峰值，请扩大频率范围或降低阻尼。"
         q_factor = 1 / max(2 * self.damping.value(), 1e-6)
+        current_object = self.object_box.currentText()
+        object_hint = self.OBJECT_HINTS.get(current_object, "")
+        self.object_hint_label.setText(f"应用场景：{object_hint}")
         self.summary_label.setText(
-            f"扫描范围 {start:.2f}-{end:.2f} Hz，本征频率 {self.natural_freq.value():.2f} Hz，"
+            f"实验对象：{current_object}。扫描范围 {start:.2f}-{end:.2f} Hz，本征频率 {self.natural_freq.value():.2f} Hz，"
             f"阻尼比 {self.damping.value():.2f}，估计 Q 值约 {q_factor:.1f}。"
-            f"峰值结果：{peak_info}。这组数据可用于说明共振峰、半功率带宽和阻尼之间的关系。"
+            f"峰值结果：{peak_info}。这组数据可用于把前序模态分析与真实扫频测量连接起来，"
+            f"说明共振峰、半功率带宽和阻尼之间的关系。"
         )
         self.last_freqs = freqs
         self.last_response = response
