@@ -112,7 +112,7 @@ class StandingWavePage(QWidget):
             "激励耦合：C = |φₙ(x₀)|",
         ))
         tips_layout.addWidget(muted_label(
-            "每一条公式单独成行显示。激励点位于节点附近时，耦合系数接近 0，即使频率接近共振也难以激发该模态。"
+            "动画会先显示激励点附近的局部响应，再逐步过渡到整条弦上的驻波模态。激励点位于节点附近时，耦合系数接近 0，即使频率接近共振也难以激发该模态。"
         ))
         control_layout.addWidget(tips_card)
         control_layout.addStretch(1)
@@ -158,6 +158,9 @@ class StandingWavePage(QWidget):
         mapping = {0: "fixed-fixed", 1: "fixed-free", 2: "free-free"}
         return mapping[self.boundary_box.currentIndex()]
 
+    def y_axis_settings(self, info: dict) -> tuple[float, float]:
+        return 1.5, 0.5
+
     def refresh_plot(self) -> None:
         y, envelope, info = self.model.simulate(
             self.x,
@@ -169,6 +172,7 @@ class StandingWavePage(QWidget):
             self.excitation_spin.value(),
             self.current_boundary(),
         )
+        y_limit, y_step = self.y_axis_settings(info)
         fig = self.canvas.figure
         fig.clear()
         ax = fig.add_subplot(111)
@@ -181,6 +185,10 @@ class StandingWavePage(QWidget):
         ax.set_title("一维驻波：频率、边界条件与节点分布", color=CHART_FG, fontsize=13)
         ax.set_xlabel("归一化位置 x/L", color=CHART_FG_MUTED)
         ax.set_ylabel("位移幅值", color=CHART_FG_MUTED)
+        ax.set_xlim(0.0, 1.0)
+        ax.set_ylim(-y_limit, y_limit)
+        ax.set_yticks(np.arange(-y_limit, y_limit + y_step, y_step))
+        ax.set_autoscale_on(False)
         ax.grid(True, alpha=0.6, color=CHART_GRID, linewidth=0.8)
         ax.set_facecolor(CHART_BG)
         for spine in ax.spines.values():
@@ -197,7 +205,8 @@ class StandingWavePage(QWidget):
             f"当前为 {self.boundary_box.currentText()} 边界、{self.current_mode()} 阶模态。"
             f"驱动频率 {self.freq_spin.value():.2f} Hz，本征频率 {info['natural_frequency']:.2f} Hz，"
             f"失谐量 {detune:+.2f} Hz。激励耦合系数为 {info['coupling']:.2f}。"
-            "这说明同一频率下，激励位置不同会导致不同的振幅响应。"
+            f"当前驻波建立程度约为 {info['build_up']:.2f}，波前传播距离约为 {info['travel_distance']:.2f}。"
+            "这说明动画会先在激励点附近出现局部震动，再随着传播和反射逐步形成完整驻波。"
         )
         self.metric_labels["本征频率"].setText(f"{info['natural_frequency']:.2f} Hz")
         self.metric_labels["响应放大"].setText(f"{info['gain']:.2f}")
