@@ -12,6 +12,7 @@ CASES = [
         "target": "一维驻波",
         "desc": "控制变量：固定边界和材料参数，只改变模态阶数。观察节点数量和本征频率之间的关系，适合讲解 fₙ = n v / 2L。",
         "actions": "一键设置：固定-固定边界，2 阶模态，驱动频率 2.00 Hz，激励点位于 x/L=0.25。",
+        "relation": "关系：模态阶数 n 增大时，本征频率按比例上升，节点数同步增加。",
         "preset": {"page": "standing_wave", "boundary": "fixed-fixed", "mode": 2, "frequency": 2.0, "amplitude": 0.55, "damping": 0.10, "excitation": 0.25},
     },
     {
@@ -19,6 +20,7 @@ CASES = [
         "target": "一维驻波",
         "desc": "控制变量：保持频率和边界不变，只改变激励位置。用于说明节点处耦合系数小，接近共振也不一定能激发模态。",
         "actions": "一键设置：固定-固定边界，2 阶模态，驱动频率 2.00 Hz，激励点位于 x/L=0.50。",
+        "relation": "关系：激励点越靠近节点，响应幅值越弱；越靠近波腹，耦合效率越高。",
         "preset": {"page": "standing_wave", "boundary": "fixed-fixed", "mode": 2, "frequency": 2.0, "amplitude": 0.75, "damping": 0.08, "excitation": 0.50},
     },
     {
@@ -26,6 +28,7 @@ CASES = [
         "target": "二维模态",
         "desc": "控制变量：固定矩形几何，只改变模态指标。零等值线对应克拉尼实验中沙粒聚集的稳定图案。",
         "actions": "一键设置：矩形膜，m=3，n=2，应用场景选择“克拉尼图形”。",
+        "relation": "关系：m、n 决定节点线条数与方向，节点线重排会改变可见图案。",
         "preset": {"page": "modes", "geometry": "rectangular", "primary": 3, "secondary": 2, "application": "克拉尼图形"},
     },
     {
@@ -33,63 +36,72 @@ CASES = [
         "target": "二维模态",
         "desc": "应用拓展：圆盘结构常见于 MEMS 谐振器。角向分瓣和径向节点圈可以用来解释驱动/检测电极布置。",
         "actions": "一键设置：圆形膜，角向阶数 2，径向指标 1，应用场景选择“MEMS 谐振器”。",
+        "relation": "关系：角向阶数增大时分瓣增多，径向指标增大时节点环数量增加。",
         "preset": {"page": "modes", "geometry": "circular", "primary": 3, "secondary": 1, "application": "MEMS 谐振器"},
     },
     {
-        "name": "案例 5：低阻尼共振峰扫描",
-        "target": "共振扫描",
-        "desc": "控制变量：固定本征频率，只降低阻尼比。观察尖锐共振峰，用于解释 Q 值、峰值响应和半功率带宽。",
-        "actions": "一键设置：扫描 0.5-4.0 Hz，本征频率 2.00 Hz，阻尼比 0.04。",
-        "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.04, "points": 320},
-    },
-    {
-        "name": "案例 6：高阻尼响应对比",
-        "target": "共振扫描",
-        "desc": "对照实验：与低阻尼案例相比，只增大阻尼比。观察峰值下降、带宽变宽，形成清晰的实验讨论材料。",
-        "actions": "一键设置：扫描 0.5-4.0 Hz，本征频率 2.00 Hz，阻尼比 0.25。",
-        "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.25, "points": 320},
-    },
-    {
-        "name": "案例 7：单缝声衍射",
-        "target": "进阶声学",
-        "desc": "进阶实验：声波通过狭缝后发生衍射，主瓣宽度与波长、缝宽和观测距离有关。适合讲解惠更斯原理和孔径限制下的声场扩展。",
-        "actions": "一键设置：单缝声衍射，频率 680 Hz，缝宽 0.18 m，屏幕距离 1.60 m。",
-        "preset": {"page": "advanced", "experiment": "单缝声衍射", "frequency": 680.0, "param_a": 0.18, "param_b": 1.6},
-    },
-    {
-        "name": "案例 8：声子晶体带隙",
-        "target": "进阶声学",
-        "desc": "高阶实验：周期结构会让特定频率的声波无法传播。通过改变质量比和刚度比，观察声学支、光学支和带隙宽度。",
-        "actions": "一键设置：一维声子晶体带隙，质量比 3.00，刚度比 0.60。",
-        "preset": {"page": "advanced", "experiment": "一维声子晶体带隙", "frequency": 800.0, "param_a": 3.0, "param_b": 0.6},
-    },
-    {
-        "name": "案例 9：亥姆霍兹共鸣吸声",
-        "target": "进阶声学",
-        "desc": "高阶实验：局域共振器会在目标频段强吸声，是消声器、建筑声学和声学超材料的基本单元。",
-        "actions": "一键设置：亥姆霍兹共鸣吸声，共鸣频率 420 Hz，阻尼 0.08。",
-        "preset": {"page": "advanced", "experiment": "亥姆霍兹共鸣吸声", "frequency": 420.0, "param_a": 0.08, "param_b": 0.0},
-    },
-    {
-        "name": "案例 10：三维点声源球面波",
+        "name": "案例 5：三维点声源球面波",
         "target": "三维声波",
         "desc": "动态实验：观察声压波峰从点声源向外传播，理解三维声波的球面扩散和波长概念。",
         "actions": "一键设置：点声源球面波，频率 420 Hz。",
+        "relation": "关系：频率越高波长越短，等相位面更密集；距离增大时振幅衰减更明显。",
         "preset": {"page": "sound3d", "mode": "点声源球面波", "frequency": 420.0, "param_a": 0.8, "param_b": 0.0},
     },
     {
-        "name": "案例 11：三维双声源干涉",
+        "name": "案例 6：三维双声源干涉",
         "target": "三维声波",
         "desc": "动态实验：两个声源同时发声，三维声压曲面展示相长和相消干涉区域随时间变化。",
         "actions": "一键设置：双声源三维干涉，频率 620 Hz，声源间距 0.65 m，相位差 0.80 rad。",
+        "relation": "关系：声源间距与相位差共同决定空间干涉条纹的密度和偏移方向。",
         "preset": {"page": "sound3d", "mode": "双声源三维干涉", "frequency": 620.0, "param_a": 0.65, "param_b": 0.8},
     },
     {
-        "name": "案例 12：矩形房间三维驻波",
+        "name": "案例 7：矩形房间三维驻波",
         "target": "三维声波",
         "desc": "应用实验：房间长、宽、高方向同时形成驻波模态，声压分布会出现空间热点和静区。适合解释室内声学、低频驻波和吸声布置。",
         "actions": "一键设置：矩形房间驻波模态，频率 180 Hz，模态阶数近似为 (3, 2, 1)。",
+        "relation": "关系：房间尺度与模态阶数组合决定驻波热点位置，影响听感均匀性。",
         "preset": {"page": "sound3d", "mode": "矩形房间驻波模态", "frequency": 180.0, "param_a": 3.0, "param_b": 2.0},
+    },
+    {
+        "name": "案例 8：低阻尼共振峰扫描",
+        "target": "共振扫描",
+        "desc": "控制变量：固定本征频率，只降低阻尼比。观察尖锐共振峰，用于解释 Q 值、峰值响应和半功率带宽。",
+        "actions": "一键设置：扫描 0.5-4.0 Hz，本征频率 2.00 Hz，阻尼比 0.04。",
+        "relation": "关系：阻尼减小时峰值抬高且带宽收窄，Q 值增大。",
+        "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.04, "points": 320},
+    },
+    {
+        "name": "案例 9：高阻尼响应对比",
+        "target": "共振扫描",
+        "desc": "对照实验：与低阻尼案例相比，只增大阻尼比。观察峰值下降、带宽变宽，形成清晰的实验讨论材料。",
+        "actions": "一键设置：扫描 0.5-4.0 Hz，本征频率 2.00 Hz，阻尼比 0.25。",
+        "relation": "关系：阻尼增大时峰值降低但频带拓宽，系统对频率偏差更不敏感。",
+        "preset": {"page": "resonance", "start": 0.5, "end": 4.0, "natural": 2.0, "damping": 0.25, "points": 320},
+    },
+    {
+        "name": "案例 10：单缝声衍射",
+        "target": "进阶声学",
+        "desc": "进阶实验：声波通过狭缝后发生衍射，主瓣宽度与波长、缝宽和观测距离有关。适合讲解惠更斯原理和孔径限制下的声场扩展。",
+        "actions": "一键设置：单缝声衍射，频率 680 Hz，缝宽 0.18 m，屏幕距离 1.60 m。",
+        "relation": "关系：a/λ 越小主瓣越宽，L 增大时屏上图样更接近远场分布。",
+        "preset": {"page": "advanced", "experiment": "单缝声衍射", "frequency": 680.0, "param_a": 0.18, "param_b": 1.6},
+    },
+    {
+        "name": "案例 11：声子晶体带隙",
+        "target": "进阶声学",
+        "desc": "高阶实验：周期结构会让特定频率的声波无法传播。通过改变质量比和刚度比，观察声学支、光学支和带隙宽度。",
+        "actions": "一键设置：一维声子晶体带隙，质量比 3.00，刚度比 0.60。",
+        "relation": "关系：质量比与刚度比变化会移动带隙边界，决定禁带范围。",
+        "preset": {"page": "advanced", "experiment": "一维声子晶体带隙", "frequency": 800.0, "param_a": 3.0, "param_b": 0.6},
+    },
+    {
+        "name": "案例 12：亥姆霍兹共鸣吸声",
+        "target": "进阶声学",
+        "desc": "高阶实验：局域共振器会在目标频段强吸声，是消声器、建筑声学和声学超材料的基本单元。",
+        "actions": "一键设置：亥姆霍兹共鸣吸声，共鸣频率 420 Hz，阻尼 0.08。",
+        "relation": "关系：阻尼变化会影响峰值高度与半吸收带宽，体现“窄带高峰”和“宽带低峰”权衡。",
+        "preset": {"page": "advanced", "experiment": "亥姆霍兹共鸣吸声", "frequency": 420.0, "param_a": 0.08, "param_b": 0.0},
     },
 ]
 
@@ -134,6 +146,8 @@ class CasesPage(QWidget):
         self.actions_label = QLabel()
         self.actions_label.setWordWrap(True)
         self.actions_label.setObjectName("CodeLabel")
+        self.relation_label = QLabel()
+        self.relation_label.setWordWrap(True)
         self.apply_button = QPushButton("一键进入案例")
         self.apply_button.clicked.connect(self.apply_current_case)
 
@@ -143,6 +157,8 @@ class CasesPage(QWidget):
         detail_layout.addWidget(self.desc_label)
         detail_layout.addWidget(QLabel("预设参数"))
         detail_layout.addWidget(self.actions_label)
+        detail_layout.addWidget(QLabel("要验证的关系"))
+        detail_layout.addWidget(self.relation_label)
         detail_layout.addWidget(self.apply_button)
         detail_layout.addStretch(1)
         main_layout.addWidget(detail_card, 1)
@@ -164,12 +180,14 @@ class CasesPage(QWidget):
             self.target_label.setText(f"目标页面：{case['target']}")
             self.desc_label.setText(case["desc"])
             self.actions_label.setText(case["actions"])
+            self.relation_label.setText(case.get("relation", ""))
             self.apply_button.setEnabled(True)
         else:
             self.title_label.setText("请选择一个案例")
             self.target_label.clear()
             self.desc_label.clear()
             self.actions_label.clear()
+            self.relation_label.clear()
             self.apply_button.setEnabled(False)
 
     def apply_current_case(self) -> None:
