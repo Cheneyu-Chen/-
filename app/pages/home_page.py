@@ -13,7 +13,7 @@ class HomePage(QWidget):
         layout.setSpacing(12)
 
         hero, hero_layout = make_card()
-        title = QLabel("声波与振动可视化虚拟仿真平台")
+        title = QLabel("声振视界——声波与振动可视化仿真平台")
         title.setObjectName("TitleLabel")
         subtitle = QLabel(
             "平台以声波激励与结构振动响应为主线，构建从一维驻波、二维模态到三维声场的"

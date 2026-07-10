@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(14, 20, 14, 20)
         layout.setSpacing(6)
 
-        logo_label = QLabel("声波与振动\n可视化仿真平台")
+        logo_label = QLabel("声振视界\n声波与振动可视化仿真平台")
         logo_label.setObjectName("TitleLabel")
         logo_label.setAlignment(Qt.AlignCenter)
         logo_label.setWordWrap(True)

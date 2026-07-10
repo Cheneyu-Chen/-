@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-APP_TITLE = "声波与振动可视化虚拟仿真平台"
+APP_TITLE = "声振视界——声波与振动可视化仿真平台"
 
 CHART_BG = "#ffffff"
 CHART_FG = "#111827"
