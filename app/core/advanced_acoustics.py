@@ -72,6 +72,62 @@ def diffraction_field_2d(
     return xx, yy, intensity, wavelength
 
 
+def single_slit_diffraction_frame(
+    frequency: float,
+    slit_width: float,
+    screen_distance: float,
+    sound_speed: float,
+    time_phase: float,
+    resolution: int = 240,
+):
+    x = np.linspace(-2.5, 2.5, resolution)
+    y = np.linspace(0.0, max(screen_distance, 0.2), resolution)
+    xx, yy = np.meshgrid(x, y)
+
+    wavelength = sound_speed / max(frequency, 1e-6)
+    wave_number = 2.0 * np.pi / max(wavelength, 1e-9)
+    omega = 2.0 * np.pi * time_phase
+
+    obstacle_y = max(min(screen_distance * 0.28, screen_distance * 0.72), 0.18)
+    slit_half = max(slit_width / 2.0, 0.02)
+    aperture_count = max(21, int(np.ceil(48 * slit_width)))
+    aperture_x = np.linspace(-slit_half, slit_half, aperture_count)
+    aperture_y = np.full_like(aperture_x, obstacle_y)
+
+    incident = np.cos(wave_number * yy - omega)
+    transmitted = np.zeros_like(xx)
+    for sx, sy in zip(aperture_x, aperture_y):
+        rr = np.sqrt((xx - sx) ** 2 + (yy - sy) ** 2)
+        rr = np.maximum(rr, 0.05)
+        transmitted += np.cos(wave_number * rr - omega) / np.sqrt(rr)
+
+    field = np.where(yy <= obstacle_y, incident, transmitted)
+    field /= max(float(np.max(np.abs(field))), 1e-9)
+
+    screen_x = np.linspace(-2.5, 2.5, resolution)
+    screen_y = np.full_like(screen_x, screen_distance)
+    screen_pressure = np.zeros_like(screen_x)
+    for sx, sy in zip(aperture_x, aperture_y):
+        rr = np.sqrt((screen_x - sx) ** 2 + (screen_y - sy) ** 2)
+        rr = np.maximum(rr, 0.05)
+        screen_pressure += np.cos(wave_number * rr - omega) / np.sqrt(rr)
+
+    screen_intensity = screen_pressure**2
+    screen_intensity /= max(float(np.max(screen_intensity)), 1e-9)
+
+    return {
+        "xx": xx,
+        "yy": yy,
+        "field": field,
+        "screen_x": screen_x,
+        "screen_intensity": screen_intensity,
+        "wavefront_phase": float(time_phase % 1.0),
+        "wavelength": wavelength,
+        "obstacle_y": obstacle_y,
+        "slit_half": slit_half,
+    }
+
+
 def phononic_chain_dispersion(
     mass_ratio: float,
     stiffness_ratio: float,

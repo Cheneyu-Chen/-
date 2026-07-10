@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (
     QComboBox,
@@ -18,11 +19,10 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.advanced_acoustics import (
-    diffraction_field,
-    diffraction_field_2d,
     helmholtz_absorber_response,
     interference_field,
     phononic_chain_dispersion,
+    single_slit_diffraction_frame,
 )
 from app.core.enhancements import metamaterial_array_response
 from app.theme import (
@@ -45,6 +45,8 @@ class AdvancedAcousticsPage(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.time_value = 0.0
+        self.diffraction_screen_exposure: np.ndarray | None = None
+        self.diffraction_signature: tuple[float, float, float, float, int] | None = None
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.on_tick)
 
@@ -238,6 +240,8 @@ class AdvancedAcousticsPage(QWidget):
             self.speed_spin.setEnabled(True)
 
         experiment = self.experiment_box.currentText()
+        if experiment != "单缝声衍射":
+            self._reset_diffraction_memory()
         if experiment == "双声源干涉":
             self.label_a.setText("声源间距(A) / m")
             self.label_b.setText("初始相位差(B)")
@@ -250,7 +254,7 @@ class AdvancedAcousticsPage(QWidget):
             self.label_b.setText("探测屏距(B) / m")
             self.param_b.setEnabled(True)
             self.param_a.setRange(0.02, 1.2)
-            self.param_b.setRange(0.2, 8.0)
+            self.param_b.setRange(0.5, 8.0)
             self._plot_diffraction(fig)
         elif experiment == "一维声子晶体带隙":
             self.label_a.setText("质量比(A)")
@@ -298,66 +302,143 @@ class AdvancedAcousticsPage(QWidget):
         )
 
     def _plot_diffraction(self, fig) -> None:
+        frequency = self.freq_spin.value()
         slit_width = self.param_a.value()
-        screen_distance = max(self.param_b.value(), 0.2)
+        screen_distance = max(self.param_b.value(), 0.5)
         sound_speed = self._current_sound_speed()
-        x, envelope, wavelength = diffraction_field(
-            self.freq_spin.value(),
-            slit_width,
-            screen_distance,
+        frame = single_slit_diffraction_frame(
+            frequency=frequency,
+            slit_width=slit_width,
+            screen_distance=screen_distance,
             sound_speed=sound_speed,
-        )
-        xx, yy, intensity, _ = diffraction_field_2d(
-            self.freq_spin.value(),
-            slit_width,
-            screen_distance,
-            sound_speed=sound_speed,
+            time_phase=self.time_value,
+            resolution=220,
         )
 
-        ax_field, ax_line = fig.subplots(1, 2)
-        im = ax_field.imshow(
-            intensity,
-            extent=[xx.min(), xx.max(), yy.min(), yy.max()],
+        signature = (
+            round(frequency, 3),
+            round(slit_width, 3),
+            round(screen_distance, 3),
+            round(sound_speed, 3),
+            int(frame["field"].shape[0]),
+        )
+        if self.diffraction_signature != signature or self.diffraction_screen_exposure is None:
+            self.diffraction_signature = signature
+            self.diffraction_screen_exposure = np.zeros_like(frame["screen_intensity"])
+
+        self.diffraction_screen_exposure = 0.88 * self.diffraction_screen_exposure + 0.12 * frame["screen_intensity"]
+        self.diffraction_screen_exposure = np.clip(self.diffraction_screen_exposure, 0.0, 1.0)
+
+        ax_field, ax_screen = fig.subplots(
+            2,
+            1,
+            gridspec_kw={"height_ratios": [2.1, 1.0]},
+        )
+
+        field_im = ax_field.imshow(
+            frame["field"],
+            extent=[
+                float(frame["xx"].min()),
+                float(frame["xx"].max()),
+                float(frame["yy"].min()),
+                float(frame["yy"].max()),
+            ],
             origin="lower",
-            cmap="magma",
+            cmap="RdBu_r",
             aspect="auto",
+            vmin=-1.0,
+            vmax=1.0,
         )
-        ax_field.plot([-slit_width / 2, slit_width / 2], [0, 0], color="white", linewidth=3.0)
-        ax_field.axhline(screen_distance, color=CHART_LINE_GREEN, linestyle="--", linewidth=1.5)
-        ax_field.set_title("狭缝后二维衍射场", color=CHART_FG)
+        barrier_y = float(frame["obstacle_y"])
+        slit_half = float(frame["slit_half"])
+        x_min = float(frame["xx"].min())
+        x_max = float(frame["xx"].max())
+        barrier_thickness = max(float(frame["wavelength"]) * 0.12, 0.04)
+        ax_field.fill_betweenx(
+            [barrier_y - barrier_thickness, barrier_y + barrier_thickness],
+            x_min,
+            -slit_half,
+            color="#111827",
+            alpha=0.92,
+            zorder=6,
+        )
+        ax_field.fill_betweenx(
+            [barrier_y - barrier_thickness, barrier_y + barrier_thickness],
+            slit_half,
+            x_max,
+            color="#111827",
+            alpha=0.92,
+            zorder=6,
+        )
+        front_y = barrier_y * (0.15 + 0.85 * float(frame["wavefront_phase"]))
+        ax_field.axhline(front_y, color=CHART_LINE_GREEN, linestyle=":", linewidth=1.3, alpha=0.75, zorder=7)
+        ax_field.text(
+            x_min + 0.06 * (x_max - x_min),
+            max(front_y + 0.06, 0.08),
+            "入射前沿",
+            color=CHART_LINE_GREEN,
+            fontsize=10,
+            ha="left",
+            va="bottom",
+        )
+        ax_field.set_title("单缝衍射形成过程", color=CHART_FG)
         ax_field.set_xlabel("横向位置 x / m", color=CHART_FG_MUTED)
-        ax_field.set_ylabel("传播距离 y / m", color=CHART_FG_MUTED)
+        ax_field.set_ylabel("传播方向 y / m", color=CHART_FG_MUTED)
+        ax_field.set_xlim(x_min, x_max)
+        ax_field.set_ylim(0.0, float(frame["yy"].max()))
         self._style_axis(ax_field)
-        fig.colorbar(im, ax=ax_field, shrink=0.86)
+        fig.colorbar(field_im, ax=ax_field, shrink=0.84, pad=0.03)
 
-        ax_line.plot(x, envelope, color=CHART_LINE_PRIMARY, linewidth=2.2)
-        ax_line.fill_between(x, envelope, color=CHART_LINE_PRIMARY, alpha=0.18)
-        scan_index = int((self.time_value * 60) % len(x))
-        scan_x = x[scan_index]
-        ax_line.axvline(scan_x, color=CHART_LINE_RED, linestyle="--", linewidth=1.8, label="探头扫描")
-        ax_line.scatter([scan_x], [envelope[scan_index]], color=CHART_LINE_RED, s=55, zorder=5)
-        ax_line.set_title("探测屏强度分布", color=CHART_FG)
-        ax_line.set_xlabel("屏上横向位置 / m", color=CHART_FG_MUTED)
-        ax_line.set_ylabel("归一化强度", color=CHART_FG_MUTED)
-        self._style_axis(ax_line)
+        exposure = self.diffraction_screen_exposure
+        ax_screen.plot(frame["screen_x"], exposure, color=CHART_LINE_PRIMARY, linewidth=2.1, label="累计显影")
+        ax_screen.fill_between(frame["screen_x"], exposure, color=CHART_LINE_PRIMARY, alpha=0.18)
+        ax_screen.plot(
+            frame["screen_x"],
+            frame["screen_intensity"],
+            color=CHART_LINE_AMBER,
+            linestyle="--",
+            linewidth=1.3,
+            alpha=0.9,
+            label="当前瞬时强度",
+        )
+        scan_index = int((self.time_value * 48) % len(frame["screen_x"]))
+        scan_x = float(frame["screen_x"][scan_index])
+        ax_screen.axvline(scan_x, color=CHART_LINE_RED, linestyle=":", linewidth=1.6, label="显影扫描")
+        ax_screen.scatter([scan_x], [exposure[scan_index]], color=CHART_LINE_RED, s=44, zorder=5)
+        ax_screen.set_title("探测屏上的条纹显影", color=CHART_FG)
+        ax_screen.set_xlabel("屏面横向位置 x / m", color=CHART_FG_MUTED)
+        ax_screen.set_ylabel("归一化强度", color=CHART_FG_MUTED)
+        ax_screen.set_xlim(float(frame["screen_x"].min()), float(frame["screen_x"].max()))
+        ax_screen.set_ylim(0.0, 1.08)
+        self._style_axis(ax_screen)
+        legend = ax_screen.legend(loc="upper right")
+        for text in legend.get_texts():
+            text.set_color(CHART_FG)
 
-        ratio = slit_width / max(wavelength, 1e-9)
-        fraunhofer_limit = slit_width**2 / max(wavelength, 1e-9)
+        ratio = slit_width / max(float(frame["wavelength"]), 1e-9)
+        fraunhofer_limit = slit_width**2 / max(float(frame["wavelength"]), 1e-9)
         if screen_distance >= 5.0 * fraunhofer_limit:
-            condition = "远场条件良好"
+            condition = "远场条件较好"
         elif screen_distance >= 2.0 * fraunhofer_limit:
             condition = "远场近似基本可用"
         else:
             condition = "更接近近场，建议增大屏距"
+
+        exposure_level = float(np.mean(exposure))
         self.param_hint.setText(
             "参数 A：缝宽 a / m；参数 B：屏距 L / m。"
-            f" 当前指标：λ={wavelength:.3f} m，a/λ={ratio:.2f}，L/(a²/λ)={screen_distance/max(fraunhofer_limit,1e-9):.2f}。"
+            "上图展示波前穿过缝口后由平直转为弯曲，下图蓝线是逐帧显影，橙线是当前瞬时强度。"
         )
         self.summary_label.setText(
-            f"介质声速 c={sound_speed:.1f} m/s。{condition}。"
-            "左图显示狭缝后空间衍射场，右图显示同一条件下探测屏强度分布。"
-            "当 a 与 λ 同量级时，主瓣展宽与旁瓣变化最容易观察。"
+            f"介质声速 c={sound_speed:.1f} m/s，λ={float(frame['wavelength']):.3f} m。"
+            f"{condition}。"
+            f"缝宽 a={slit_width:.2f} m，屏距 L={screen_distance:.2f} m，"
+            f"显影平均强度 {exposure_level:.2f}。"
         )
+
+    def _reset_diffraction_memory(self) -> None:
+        self.diffraction_screen_exposure = None
+        self.diffraction_signature = None
 
     def _plot_bandgap(self, fig) -> None:
         mass_ratio = self.param_a.value()
@@ -430,6 +511,7 @@ class AdvancedAcousticsPage(QWidget):
 
     def reset_animation(self) -> None:
         self.time_value = 0.0
+        self._reset_diffraction_memory()
         self.refresh_plot()
 
     def apply_preset(self, preset: dict) -> None:
@@ -443,6 +525,7 @@ class AdvancedAcousticsPage(QWidget):
         self.param_a.setValue(float(preset.get("param_a", self.param_a.value())))
         self.param_b.setValue(float(preset.get("param_b", self.param_b.value())))
         self.time_value = 0.0
+        self._reset_diffraction_memory()
         self.refresh_plot()
 
     def export_figure(self) -> None:
