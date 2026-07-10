@@ -86,6 +86,16 @@ def build_stylesheet() -> str:
         border: 1px solid rgba(255, 255, 255, 0.72);
         border-radius: 6px;
     }
+    QLabel#FormulaLabelCompact {
+        font-family: 'Cambria Math', 'Times New Roman', 'Microsoft YaHei UI', 'Microsoft YaHei', serif;
+        font-size: 12px;
+        color: #1f2937;
+        line-height: 1.25;
+        padding: 4px 8px;
+        background-color: rgba(255, 255, 255, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 6px;
+    }
     QFrame#SidePanel {
         background-color: rgba(255, 255, 255, 0.58);
         border-right: 1px solid rgba(255, 255, 255, 0.70);

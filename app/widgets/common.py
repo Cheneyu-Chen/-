@@ -149,6 +149,16 @@ def muted_label(text: str) -> QLabel:
 def formula_label(*lines: str) -> QLabel:
     label = QLabel("\n".join(lines))
     label.setObjectName("FormulaLabel")
-    label.setWordWrap(False)
+    label.setWordWrap(True)
     label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+    label.setMinimumHeight(0)
+    return label
+
+
+def compact_formula_label(*lines: str) -> QLabel:
+    label = QLabel("\n".join(lines))
+    label.setObjectName("FormulaLabelCompact")
+    label.setWordWrap(True)
+    label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+    label.setMinimumHeight(0)
     return label

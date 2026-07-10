@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QFrame,
+    QScrollArea,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -23,7 +25,7 @@ from app.theme import (
     CHART_LEGEND_FC, CHART_LINE_AMBER, CHART_LINE_GREEN, CHART_LINE_PRIMARY,
     CHART_NODE_LINE, CHART_SPINE, CHART_TICK,
 )
-from app.widgets.common import formula_label, make_card, muted_label
+from app.widgets.common import compact_formula_label, make_card, muted_label
 from app.widgets.mpl_canvas import MplCanvas
 
 
@@ -108,8 +110,10 @@ class StandingWavePage(QWidget):
         control_layout.addWidget(export_btn)
 
         tips_card, tips_layout = make_card("理论对应")
-        tips_layout.addWidget(formula_label(
+        tips_layout.addWidget(compact_formula_label(
             "固定-固定：y(0) = y(L) = 0",
+            "本征频率：fₙ = n·v / (2L)",
+            "自由-自由：y'(0) = y'(L) = 0",
             "本征频率：fₙ = n·v / (2L)",
             "固定-自由：fₙ = (n - 1/2)·v / (2L)",
             "激励耦合：C = |φₙ(x₀)|",
@@ -119,7 +123,13 @@ class StandingWavePage(QWidget):
         ))
         control_layout.addWidget(tips_card)
         control_layout.addStretch(1)
-        root.addWidget(control_card, 0)
+
+        left_scroll = QScrollArea()
+        left_scroll.setFrameShape(QFrame.NoFrame)
+        left_scroll.setWidgetResizable(True)
+        left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        left_scroll.setWidget(control_card)
+        root.addWidget(left_scroll, 0)
 
         right = QVBoxLayout()
         right.setSpacing(12)
