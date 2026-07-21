@@ -98,8 +98,8 @@ class MainWindow(QMainWindow):
             ("共振扫描", 4),
             ("进阶声学", 5),
             ("教学案例", 6),
-            ("增强工具", 7),
-            ("实验对比", 8),
+            ("分析与报告", 7),
+            ("仿真成果对照", 8),
         ]
         for name, index in nav_items:
             btn = QLabel(name)

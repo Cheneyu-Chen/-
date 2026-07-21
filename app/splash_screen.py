@@ -85,7 +85,7 @@ class SplashScreen(QWidget):
 
         feature_row = QHBoxLayout()
         feature_row.setSpacing(10)
-        for text in ["动态声场", "三维仿真", "一键案例", "实验对比"]:
+        for text in ["动态声场", "三维仿真", "一键案例", "仿真成果对照"]:
             label = QLabel(text)
             label.setObjectName("SplashFeature")
             label.setAlignment(Qt.AlignCenter)

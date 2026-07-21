@@ -39,7 +39,7 @@ class EnhancementPage(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
-        intro, intro_layout = make_card("增强分析工具")
+        intro, intro_layout = make_card("分析与报告")
         intro_layout.addWidget(muted_label(
             "本页提供实验照片导入与相似度计算和自动生成实验报告。"
         ))
